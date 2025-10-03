@@ -44,7 +44,7 @@ public class DocumentsController : ControllerBase
     {
         var ok = await _svc.DeleteAsync(id);
         if (!ok) return NotFound("Fail ei leitud.");
-        return NoContent(); // 204
+        return NoContent(); 
     }
 
 }

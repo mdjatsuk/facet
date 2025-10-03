@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useApi } from '~/composables/useApi';
-
 
 type DocItem = { id:string; fileName:string; contentType:string; sizeBytes:number; uploadedAt:string }
 const { get,del } = useApi()
@@ -63,7 +61,7 @@ onMounted(() => refresh())
       </section>
 
       <section class="md:col-span-1">
-        <DocListBox :docs="docs" :selected-id="highlightedId" @select="(id: string) => { selectedId = id; highlightedId = id }"  @highlight="(id: string) => highlightedId = id"  @delete="onDelete" />
+        <DocListBox :docs="docs.value" :selected-id="highlightedId" @select="(id: string) => { selectedId = id; highlightedId = id }"  @highlight="(id: string) => highlightedId = id"  @delete="onDelete" />
       </section>
     </main>
 
