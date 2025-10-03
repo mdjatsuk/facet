@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useApi } from '~/composables/useApi';
-
 
 type UploadResult = { success: boolean; message: string; document?: any }
 const emit = defineEmits<{ (e:'uploaded', doc: any):void }>()
@@ -20,7 +18,7 @@ async function doUpload(file: File){
   if(file.size > MAX_UPLOAD_BYTES) return showToast('error','Fail on liiga suur. Lubatud kuni 10 MB.')
   busy.value = true
   try {
-    const res = await upload<UploadResult>('/api/documents/upload', file)
+    const res = await upload<UploadResult>('api/documents/upload', file)
     if(res.success && res.document){
       showToast('success','Fail on edukalt üles laetud')
       emit('uploaded', res.document)

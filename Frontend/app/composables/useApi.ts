@@ -1,3 +1,5 @@
+import { useRuntimeConfig } from "nuxt/app"
+
 export function useApi() {
   const config = useRuntimeConfig() 
   const base = config.public.apiBase
