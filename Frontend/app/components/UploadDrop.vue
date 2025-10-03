@@ -1,5 +1,6 @@
 <script setup lang="ts">
-
+import { ref } from 'vue';
+import { useApi } from '../composables/useApi' 
 type UploadResult = { success: boolean; message: string; document?: any }
 const emit = defineEmits<{ (e:'uploaded', doc: any):void }>()
 

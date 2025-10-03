@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FacetApi.Migrations
 {
     [DbContext(typeof(FacetDbContext))]
-    [Migration("20251003113400_InitialCreation")]
-    partial class InitialCreation
+    [Migration("20251003145913_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
