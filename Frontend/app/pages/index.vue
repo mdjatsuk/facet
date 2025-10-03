@@ -8,11 +8,11 @@ const docs = ref<DocItem[]>([])
 const selectedId = ref<string|null>(null)
 const highlightedId = ref<string|null>(null)
 const selectedDoc = computed(() => docs.value.find(d => d.id === selectedId.value) || docs.value[0])
-const previewUrl = computed(() => selectedDoc.value ? `${apiBase}/api/documents/${selectedDoc.value.id}/file` : '')
+const previewUrl = computed(() => selectedDoc.value ? `${apiBase}api/documents/${selectedDoc.value.id}/file` : '')
 const previewType = computed(() => selectedDoc.value?.contentType || '')
 
 async function refresh(selectNewId?: string){
-  docs.value = await get<DocItem[]>('/api/documents')
+  docs.value = await get<DocItem[]>('api/documents')
   if (selectNewId) {
     selectedId.value = selectNewId
   } else if (!selectedId.value && docs.value.length > 0) {
@@ -23,7 +23,7 @@ async function refresh(selectNewId?: string){
 }
 
 async function onDelete(id: string) {
-  await del(`/api/documents/${id}`)
+  await del(`api/documents/${id}`)
   await refresh() 
 }
 
@@ -61,7 +61,7 @@ onMounted(() => refresh())
       </section>
 
       <section class="md:col-span-1">
-        <DocListBox :docs="docs.value" :selected-id="highlightedId" @select="(id: string) => { selectedId = id; highlightedId = id }"  @highlight="(id: string) => highlightedId = id"  @delete="onDelete" />
+        <DocListBox :docs="docs" :selected-id="highlightedId" @select="(id: string) => { selectedId = id; highlightedId = id }"  @highlight="(id: string) => highlightedId = id"  @delete="onDelete" />
       </section>
     </main>
 

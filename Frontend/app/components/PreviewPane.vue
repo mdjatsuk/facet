@@ -1,6 +1,5 @@
 <script setup lang="ts">
 
-
 const props = defineProps<{ url: string, contentType?: string }>()
 
 const isPdf = computed(() => (props.contentType || '').includes('pdf') || props.url.endsWith('.pdf'))
