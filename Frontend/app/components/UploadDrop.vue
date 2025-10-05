@@ -24,20 +24,20 @@ function showToast(type: 'success' | 'error' | 'info', message: string) {
 
 async function doUpload(file: File) {
   const ext = extOf(file.name)
-  if (!allowedExt.includes(ext)) return showToast('error', 'Pole toetatud failitüüp. Lubatud: PDF, JPG, PNG.')
-  if (file.size > MAX_UPLOAD_BYTES) return showToast('error', 'Fail on liiga suur. Lubatud kuni 10 MB.')
+  if (!allowedExt.includes(ext)) return showToast('error', 'Unsupported file type. Allowed: PDF, JPG, PNG.')
+  if (file.size > MAX_UPLOAD_BYTES) return showToast('error', 'File is too large. Maximum 10 MB allowed.')
   busy.value = true
   try {
     const res = await upload<UploadResult>('api/documents/upload', file)
     if (res.success && res.document) {
-      showToast('success', 'Fail on edukalt üles laetud')
+      showToast('success', 'File uploaded successfully')
       emit('uploaded', res.document)
     } else {
-      showToast('error', res.message || 'Üleslaadimine ebaõnnestus')
+      showToast('error', res.message || 'Upload failed')
     }
   } catch (e: unknown) {
     const error = e as ApiError
-    showToast('error', error?.data || error?.message || 'Üleslaadimine ebaõnnestus')
+    showToast('error', error?.data || error?.message || 'Upload failed')
   } finally { 
     busy.value = false 
   }
@@ -61,11 +61,11 @@ function onDrop(e: DragEvent) {
     <div class="card p-6 border-dashed" :class="[dragOver ? 'border-primary bg-sky-50' : 'border-slate-200']"
          @dragover.prevent="dragOver=true" @dragleave.prevent="dragOver=false" @drop.prevent="onDrop">
       <div class="flex flex-col items-center gap-2 text-center">
-        <div class="text-lg font-semibold">Lohista fail siia või vali</div>
-        <p class="muted">Lubatud: PDF, JPG, PNG • kuni 10MB</p>
+        <div class="text-lg font-semibold">Drag file here or select</div>
+        <p class="muted">Allowed: PDF, JPG, PNG • up to 10MB</p>
         <input type="file" accept=".pdf,.jpg,.jpeg,.png" @change="onInput" class="hidden" id="fileInput">
-        <label for="fileInput" class="btn btn-primary mt-2 cursor-pointer">Vali fail</label>
-        <div v-if="busy" class="mt-2 text-sm text-slate-500 animate-pulse">Laadin üles…</div>
+        <label for="fileInput" class="btn btn-primary mt-2 cursor-pointer">Select file</label>
+        <div v-if="busy" class="mt-2 text-sm text-slate-500 animate-pulse">Uploading…</div>
       </div>
     </div>
     <UiToast v-if="toast" :type="toast.type" :message="toast.message"/>
