@@ -1,24 +1,26 @@
 <script setup lang="ts">
+import type { Document } from '~/types'
 
-type DocItem = { id:string; fileName:string; contentType:string; sizeBytes:number; uploadedAt:string }
-const { get,del } = useApi()
+const { get, del } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
 
-const docs = ref<DocItem[]>([])
-const selectedId = ref<string|null>(null)
-const highlightedId = ref<string|null>(null)
-const selectedDoc = computed(() => docs.value.find(d => d.id === selectedId.value) || docs.value[0])
+const docs = ref<Document[]>([])
+const selectedId = ref<string | null>(null)
+const highlightedId = ref<string | null>(null)
+const selectedDoc = computed(() => 
+  docs.value.find(d => d.id === selectedId.value) || docs.value[0] || null
+)
 const previewUrl = computed(() => selectedDoc.value ? `${apiBase}api/documents/${selectedDoc.value.id}/file` : '')
 const previewType = computed(() => selectedDoc.value?.contentType || '')
 
-async function refresh(selectNewId?: string){
-  docs.value = await get<DocItem[]>('api/documents')
+async function refresh(selectNewId?: string) {
+  docs.value = await get<Document[]>('api/documents')
   if (selectNewId) {
     selectedId.value = selectNewId
   } else if (!selectedId.value && docs.value.length > 0) {
-    selectedId.value = docs.value[0].id
+    selectedId.value = docs.value[0]?.id || null
   } else if (selectedId.value && !docs.value.some(d => d.id === selectedId.value) && docs.value.length > 0) {
-    selectedId.value = docs.value[0].id
+    selectedId.value = docs.value[0]?.id || null
   }
 }
 
@@ -27,9 +29,9 @@ async function onDelete(id: string) {
   await refresh() 
 }
 
-function onUploaded(doc:any)
-{ refresh(doc.id) 
-selectedId.value = doc.id 
+function onUploaded(doc: Document) {
+  refresh(doc.id) 
+  selectedId.value = doc.id 
 }
 
 onMounted(() => refresh())
