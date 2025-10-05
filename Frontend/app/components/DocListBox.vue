@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import type { Document } from '~/types'
 
-const props = defineProps<{ docs: any[], selectedId?: string | null }>()
+const props = defineProps<{ docs: Document[], selectedId?: string | null }>()
 const emit = defineEmits<{ 
-  (e:'select', id:string): void 
-  (e:'delete', id:string): void
-  (e:'highlight', id:string): void
+  (e: 'select', id: string): void 
+  (e: 'delete', id: string): void
+  (e: 'highlight', id: string): void
 }>()
 
 const api = useRuntimeConfig().public.apiBase as string
-function cls(id:string){ return ['listbox-item', props.selectedId===id ? 'listbox-item-active' : ''].join(' ') }
+function cls(id: string) { 
+  return ['listbox-item', props.selectedId === id ? 'listbox-item-active' : ''].join(' ') 
+}
 </script>
 <template>
   <div class="listbox">

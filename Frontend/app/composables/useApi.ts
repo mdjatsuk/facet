@@ -13,8 +13,8 @@ export function useApi() {
   }
 
   async function del<T>(path: string): Promise<T> {
-  return await $fetch<T>(`${base}${path}`, { method: 'DELETE' })
-}
+    return await $fetch<T>(`${base}${path}`, { method: 'DELETE' })
+  }
 
   return { get, upload, del }
 }

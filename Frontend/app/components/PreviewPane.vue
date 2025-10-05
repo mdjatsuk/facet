@@ -1,10 +1,17 @@
 <script setup lang="ts">
-
 const props = defineProps<{ url: string, contentType?: string }>()
 
-const isPdf = computed(() => (props.contentType || '').includes('pdf') || props.url.endsWith('.pdf'))
-const isImage = computed(() => /(png|jpe?g|gif|webp|bmp|svg)/i.test(props.contentType || '') || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(props.url))
-const isText = computed(() => (props.contentType || '').startsWith('text/') || /\.(txt|csv|json|md)$/i.test(props.url))
+const isPdf = computed(() => 
+  (props.contentType || '').includes('pdf') || props.url.endsWith('.pdf')
+)
+const isImage = computed(() => 
+  /(png|jpe?g|gif|webp|bmp|svg)/i.test(props.contentType || '') || 
+  /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(props.url)
+)
+const isText = computed(() => 
+  (props.contentType || '').startsWith('text/') || 
+  /\.(txt|csv|json|md)$/i.test(props.url)
+)
 </script>
 <template>
   <div class="card p-0 h-[600px] overflow-hidden">
