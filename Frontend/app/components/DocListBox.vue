@@ -16,19 +16,21 @@ function cls(id: string) {
 <template>
   <div class="listbox">
     <div class="listbox-header">
-      <div class="font-semibold">Laaditud dokumendid</div>
+      <div class="font-semibold">Uploaded Documents</div>
       <div class="muted">{{ docs.length }}</div>
     </div>
     <div class="listbox-body">
-      <div v-for="d in docs" :key="d.id" :class="cls(d.id)" @click="$emit('highlight', d.id)">
-        <div class="flex flex-col min-w-0">
-          <div class="font-medium truncate max-w-[220px]">{{ d.fileName }}</div>
-          <div class="muted">{{ (d.sizeBytes/1024).toFixed(1) }} KB · {{ new Date(d.uploadedAt).toLocaleString() }}</div>
+      <div v-for="d in docs" :key="d.id" :class="cls(d.id)" @click="$emit('select', d.id)">
+        <div class="flex flex-col flex-1 min-w-0 mr-2">
+          <div class="font-medium truncate">{{ d.fileName }}</div>
+          <div class="text-xs text-slate-400">
+            <div class="truncate">{{ (d.sizeBytes/1024).toFixed(1).replace('.', ',') }} KB</div>
+            <div class="truncate">{{ new Date(d.uploadedAt).toLocaleDateString('et-EE') }} {{ new Date(d.uploadedAt).toLocaleTimeString('et-EE', { hour: '2-digit', minute: '2-digit' }) }}</div>
+          </div>
         </div>
           
-        <div class="flex gap-2 shrink-0">
-          <button @click.stop="$emit('select', d.id)" class="btn btn-ghost ml-3 shrink-0">Ava</button>
-          <button @click.stop="$emit('delete', d.id)" class="btn btn-ghost text-red-500">❌</button>
+        <div class="flex gap-1 shrink-0">
+          <button @click.stop="$emit('delete', d.id)" class="px-3 py-2 text-sm rounded bg-red-50 hover:bg-red-100 text-red-600 transition font-medium">×</button>
         </div>
       </div>
     </div>

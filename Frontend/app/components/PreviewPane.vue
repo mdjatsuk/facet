@@ -14,7 +14,7 @@ const isText = computed(() =>
 )
 </script>
 <template>
-  <div class="card p-0 h-[600px] overflow-hidden">
+  <div class="card p-0 w-full aspect-[210/297] max-h-[80vh] overflow-hidden">
     <template v-if="isPdf">
       <object :data="url" type="application/pdf" class="w-full h-full">
         <iframe :src="url" class="w-full h-full"></iframe>
