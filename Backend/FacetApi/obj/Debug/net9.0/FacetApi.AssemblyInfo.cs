@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FacetApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+373999a1c54281d5428405a56fcedfdb3048b7e6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8cc85818672306366182b3672d1309e56e03774c")]
 [assembly: System.Reflection.AssemblyProductAttribute("FacetApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FacetApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

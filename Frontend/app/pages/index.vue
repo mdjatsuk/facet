@@ -39,14 +39,14 @@ onMounted(() => refresh())
     <header class="sticky top-0 z-10 bg-white/70 backdrop-blur border-b border-slate-200">
       <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <img src="/favicon.svg" alt="FACET" class="h-6 w-6" />
+          <img src="/favicon.svg" alt="FACET" class="h-10 w-10" />
           <span class="font-semibold tracking-tight">FACET</span>
         </div>
         <div class="muted">Upload → Preview → Open</div>
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-6 py-8 grid gap-6 md:grid-cols-3">
+    <main class="max-w-7xl mx-auto px-6 py-8 grid gap-6 md:grid-cols-5">
       <section class="space-y-4 md:col-span-1">
         <div class="card p-6">
           <h2 class="text-xl font-semibold mb-1">Laadi üles dokument</h2>
@@ -55,7 +55,7 @@ onMounted(() => refresh())
         </div>
       </section>
 
-      <section class="md:col-span-1">
+      <section class="md:col-span-3">
         <PreviewPane v-if="selectedDoc" :url="previewUrl" :contentType="previewType" />
         <div v-else class="card p-6 h-[600px] flex items-center justify-center muted">Pole midagi näidata</div>
       </section>
