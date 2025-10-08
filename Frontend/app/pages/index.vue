@@ -6,6 +6,9 @@ const apiBase = useRuntimeConfig().public.apiBase as string
 
 const docs = ref<Document[]>([])
 const selectedId = ref<string | null>(null)
+const sensitiveItems = ref<string[]>([])
+
+
 const selectedDoc = computed(() => 
   docs.value.find(d => d.id === selectedId.value) || docs.value[0] || null
 )
@@ -54,6 +57,7 @@ onMounted(() => refresh())
     <main class="max-w-7xl mx-auto px-6 py-8 grid gap-6 md:grid-cols-5">
       <section class="space-y-4 md:col-span-1">
           <UploadDrop @uploaded="onUploaded" />
+          <SensitiveDataBox :items="sensitiveItems" />
       </section>
 
       <section class="md:col-span-3">

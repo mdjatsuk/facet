@@ -18,7 +18,7 @@ function cls(id: string) {
       <div class="font-semibold">Uploaded Documents</div>
       <div class="muted">{{ docs.length }}</div>
     </div>
-    <div class="listbox-body">
+    <div class="listbox-body max-h-64 overflow-auto">
       <div v-for="d in docs" :key="d.id" :class="cls(d.id)" @click="$emit('select', d.id)">
         <div class="flex flex-col flex-1 min-w-0 mr-2">
           <div class="font-medium truncate">{{ d.fileName }}</div>
