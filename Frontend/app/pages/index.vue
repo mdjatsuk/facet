@@ -67,7 +67,7 @@ onMounted(() => refresh())
       </section>
 
       <section class="md:col-span-1">
-        <DocListBox :docs="docs" :selected-id="highlightedId" @select="(id: string) => { selectedId = id; highlightedId = id }"  @highlight="(id: string) => highlightedId = id"  @delete="onDelete" />
+        <DocListBox :docs="docs" :selected-id="selectedId" @select="(id: string) => { selectedId = id }"  @delete="onDelete" />
       </section>
     </main>
 
