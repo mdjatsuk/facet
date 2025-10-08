@@ -5,7 +5,6 @@ const props = defineProps<{ docs: Document[], selectedId?: string | null }>()
 const emit = defineEmits<{ 
   (e: 'select', id: string): void 
   (e: 'delete', id: string): void
-  (e: 'highlight', id: string): void
 }>()
 
 const api = useRuntimeConfig().public.apiBase as string
