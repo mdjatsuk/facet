@@ -8,15 +8,17 @@ public class DocumentService : IDocumentService
 {
     private readonly FacetDbContext _db;
     private readonly string _storageRoot;
+    private readonly ILogger<DocumentService> _logger;
 
     private const long MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".pdf", ".jpg", ".jpeg", ".png" };
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase) { "application/pdf", "image/jpeg", "image/png" };
 
-    public DocumentService(FacetDbContext db, IWebHostEnvironment env)
+    public DocumentService(FacetDbContext db, IWebHostEnvironment env, ILogger<DocumentService> logger)
     {
         _db = db;
         _storageRoot = Path.Combine(env.ContentRootPath, "storage");
+        _logger = logger;
         Directory.CreateDirectory(_storageRoot);
     }
 
@@ -29,7 +31,17 @@ public class DocumentService : IDocumentService
         if (doc is null) return null;
         var fullPath = Directory.GetFiles(_storageRoot, $"{id}_*").FirstOrDefault();
         if (fullPath is null) return null;
-        return (new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read), doc.ContentType, doc.FileName);
+        // Open for read and allow other processes to read/write where possible to reduce file locks.
+        try
+        {
+            var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            return (fs, doc.ContentType, doc.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to open file for id={Id} path={Path}", id, fullPath);
+            throw;
+        }
     }
 
     public async Task<UploadResult> UploadAsync(IFormFile file)
@@ -74,10 +86,41 @@ public class DocumentService : IDocumentService
     {
         var doc = await _db.Documents.FindAsync(id);
         if (doc is null) return false;
-
         var path = Directory.GetFiles(_storageRoot, $"{id}_*").FirstOrDefault();
         if (path is not null && File.Exists(path))
-            File.Delete(path);
+        {
+            // Try to delete with retries in case a different process still holds the file handle
+            const int maxAttempts = 5;
+            var attempt = 0;
+            var delay = 100; // ms
+            while (true)
+            {
+                try
+                {
+                    File.Delete(path);
+                    _logger?.LogInformation("Deleted file path={Path} for id={Id}", path, id);
+                    break;
+                }
+                catch (IOException ioEx)
+                {
+                    attempt++;
+                    if (attempt >= maxAttempts)
+                    {
+                        _logger?.LogError(ioEx, "Failed to delete file after {Attempts} attempts path={Path} id={Id}", attempt, path, id);
+                        // swallow and proceed to remove DB record to avoid leaving stale DB entries, but still notify
+                        break;
+                    }
+                    _logger?.LogWarning(ioEx, "File in use, retrying delete attempt {Attempt} for path={Path}", attempt, path);
+                    await Task.Delay(delay);
+                    delay *= 2;
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Unexpected error deleting file path={Path} id={Id}", path, id);
+                    break;
+                }
+            }
+        }
             
         _db.Documents.Remove(doc);
         await _db.SaveChangesAsync();
