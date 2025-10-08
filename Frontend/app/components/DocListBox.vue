@@ -18,7 +18,12 @@ function cls(id: string) {
       <div class="font-semibold">Uploaded Documents</div>
       <div class="muted">{{ docs.length }}</div>
     </div>
+
     <div class="listbox-body max-h-64 overflow-auto">
+    <div v-if="docs.length === 0" class="text-gray-500 p-4 text-center">
+             No documents uploaded.
+    </div>
+
       <div v-for="d in docs" :key="d.id" :class="cls(d.id)" @click="$emit('select', d.id)">
         <div class="flex flex-col flex-1 min-w-0 mr-2">
           <div class="font-medium truncate">{{ d.fileName }}</div>
@@ -27,7 +32,6 @@ function cls(id: string) {
             <div class="truncate">{{ new Date(d.uploadedAt).toLocaleDateString('et-EE') }} {{ new Date(d.uploadedAt).toLocaleTimeString('et-EE', { hour: '2-digit', minute: '2-digit' }) }}</div>
           </div>
         </div>
-          
         <div class="flex gap-1 shrink-0">
           <button @click.stop="$emit('delete', d.id)" class="px-3 py-2 text-sm rounded bg-red-50 hover:bg-red-100 text-red-600 transition font-medium">×</button>
         </div>
