@@ -11,6 +11,17 @@ const busy = ref(false)
 const toast = ref<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 const allowedExt = ['.pdf', '.jpg', '.jpeg', '.png']
+const fileInput = ref<HTMLInputElement | null>(null)
+
+function openFilePicker() {
+  fileInput.value?.click()
+}
+
+function onZoneClick() {
+  // don't open file picker while dragging files over or while busy
+  if (dragOver.value || busy.value) return
+  openFilePicker()
+}
 
 function extOf(name: string) { 
   const i = name.lastIndexOf('.') 
@@ -57,17 +68,37 @@ function onDrop(e: DragEvent) {
 }
 </script>
 <template>
-  <div class="space-y-3">
-    <div class="card p-6 border-dashed" :class="[dragOver ? 'border-primary bg-sky-50' : 'border-slate-200']"
-         @dragover.prevent="dragOver=true" @dragleave.prevent="dragOver=false" @drop.prevent="onDrop">
-      <div class="flex flex-col items-center gap-2 text-center">
-        <div class="text-lg font-semibold">Drag file here or select</div>
-        <p class="muted">Allowed: PDF, JPG, PNG • up to 10MB</p>
-        <input type="file" accept=".pdf,.jpg,.jpeg,.png" @change="onInput" class="hidden" id="fileInput">
-        <label for="fileInput" class="btn btn-primary mt-2 cursor-pointer">Select file</label>
-        <div v-if="busy" class="mt-2 text-sm text-slate-500 animate-pulse">Uploading…</div>
+  <div class="flex justify-center">
+    <div class="w-56">
+      <div
+        class="group w-full h-28 bg-white rounded-2xl border-2 border-dashed flex items-center justify-center px-4 hover:shadow-soft hover:bg-primary/10 hover:border-primary transition transform duration-150 hover:scale-105 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-1"
+        :class="[dragOver ? 'border-primary bg-primary/12' : 'border-slate-200']"
+        @click="onZoneClick"
+        @dragover.prevent="dragOver = true"
+        @dragenter.prevent="dragOver = true"
+        @dragleave.prevent="dragOver = false"
+        @drop.prevent="onDrop"
+        tabindex="0"
+        @keydown.enter.prevent="openFilePicker"
+        @keydown.space.prevent="openFilePicker"
+        role="region"
+        aria-label="Upload document"
+      >
+        <div class="flex flex-col items-center gap-1 text-center">
+          <!-- upload icon -->
+          <svg class="h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0l3.5 3.5M12 4L8.5 7.5" />
+          </svg>
+          <div class="text-lg font-semibold text-slate-800">Upload file</div>
+          <p class="text-xs text-slate-500">PDF, JPG, PNG — up to 10MB</p>
+          <input ref="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" @change="onInput" class="hidden" id="fileInput">
+          <div v-if="busy" class="text-xs text-slate-500 animate-pulse mt-1">Uploading…</div>
+        </div>
+      </div>
+
+      <div class="mt-2 flex justify-center">
+        <UiToast v-if="toast" :type="toast.type" :message="toast.message"/>
       </div>
     </div>
-    <UiToast v-if="toast" :type="toast.type" :message="toast.message"/>
   </div>
 </template>
