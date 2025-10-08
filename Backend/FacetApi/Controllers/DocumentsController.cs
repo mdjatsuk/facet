@@ -35,7 +35,11 @@ public class DocumentsController : ControllerBase
         var res = _svc.GetFile(id);
         if (res is null) return NotFound();
 
-        Response.Headers.ContentDisposition = $"inline; filename=\"{res.Value.FileName}\"";
+        // Set Content-Disposition using RFC5987 filename* to safely include non-ASCII characters
+        // Example: Content-Disposition: inline; filename*=UTF-8''%E4%BD%A0%E5%A5%BD.txt
+        var fileName = res.Value.FileName ?? "file";
+        var encoded = Uri.EscapeDataString(fileName);
+        Response.Headers["Content-Disposition"] = $"inline; filename*=UTF-8''{encoded}";
         return new FileStreamResult(res.Value.Stream, res.Value.ContentType);
     }
 
