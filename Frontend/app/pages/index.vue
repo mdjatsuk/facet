@@ -8,7 +8,6 @@ const docs = ref<Document[]>([])
 const selectedId = ref<string | null>(null)
 const sensitiveItems = ref<string[]>([])
 
-
 const selectedDoc = computed(() => 
   docs.value.find(d => d.id === selectedId.value) || docs.value[0] || null
 )
