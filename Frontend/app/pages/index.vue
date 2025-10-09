@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, watchEffect } from 'vue'
+
 import type { Document } from '../types'
-import { useApi } from '../composables/useApi'
-import { useRuntimeConfig } from 'nuxt/app'
+
+
 
 const { get, del } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
