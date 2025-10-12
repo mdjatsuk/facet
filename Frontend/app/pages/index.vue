@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { Document } from '~/types'
+
+import type { Document } from '../types'
+
+
 
 const { get, del } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
@@ -13,6 +16,15 @@ const selectedDoc = computed(() =>
 )
 const previewUrl = computed(() => selectedDoc.value ? `${apiBase}api/documents/${selectedDoc.value.id}/file` : '')
 const previewType = computed(() => selectedDoc.value?.contentType || '')
+
+const route = useRoute()
+const notice = ref<string | null>(null)
+
+watchEffect(() => {
+  if (route.query.notice === 'policy-created') {
+    notice.value = 'A new policy has been added to your list'
+  }
+})
 
 async function refresh(selectNewId?: string) {
   docs.value = await get<Document[]>('api/documents')
@@ -47,11 +59,23 @@ onMounted(() => refresh())
           </div>
           <span class="text-3xl text-slate-800 tracking-wide font-light">FACET</span>
         </div>
-        <button class="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg transition-colors text-sm font-medium">
-          Sign In
-        </button>
+        <div class="flex items-center gap-3">
+          <NuxtLink to="/policies/create" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors text-sm font-medium">
+            Create new policy
+          </NuxtLink>
+          <button class="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg transition-colors text-sm font-medium">
+            Sign In
+          </button>
+        </div>
       </div>
     </header>
+
+    <div v-if="notice" class="max-w-7xl mx-auto px-6 mt-4">
+      <div class="rounded-md bg-emerald-50 border border-emerald-100 p-3 text-emerald-800 flex items-center justify-between">
+        <div>{{ notice }}</div>
+        <button @click="notice = null" class="ml-4 px-3 py-1 bg-emerald-100 hover:bg-emerald-200 rounded">OK</button>
+      </div>
+    </div>
 
     <main class="max-w-7xl mx-auto px-6 py-8 grid gap-6 md:grid-cols-5">
       <section class="space-y-4 md:col-span-1">
