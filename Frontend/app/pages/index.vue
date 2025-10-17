@@ -2,13 +2,13 @@
 
 import type { Document } from '../types'
 
-
-
 const { get, del } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
 
 const docs = ref<Document[]>([])
 const selectedId = ref<string | null>(null)
+
+const policies = ref<{ id: string, name: string, options: Record<string, boolean> }[]>([])
 const sensitiveItems = ref<string[]>([])
 
 const selectedDoc = computed(() => 
@@ -20,9 +20,30 @@ const previewType = computed(() => selectedDoc.value?.contentType || '')
 const route = useRoute()
 const notice = ref<string | null>(null)
 
+const viewedPolicy = ref<{ id: string, name: string, options: Record<string, boolean> } | null>(null)
+
+const optionLabels: Record<string, string> = {
+  deleteAllEmails: 'Emails',
+  removePhoneNumbers: 'Phone Number',
+  removeNationalIds: 'ID',
+  anonymizeNames: 'Names',
+  removeMailingAddresses: 'Address',
+  deleteIPAddresses: 'IP Address',
+  removeFinancialInfo: 'Financial Info',
+  stripMedicalInfo: 'Medical Info',
+  removeUsernames: 'Usernames',
+}
+
+const activeOptions = computed(() => {
+  if (!viewedPolicy.value) return [] as (keyof typeof optionLabels)[]
+  return (Object.keys(viewedPolicy.value.options) as (keyof typeof optionLabels)[])
+    .filter(k => viewedPolicy.value?.options[k])
+})
+
 watchEffect(() => {
   if (route.query.notice === 'policy-created') {
     notice.value = 'A new policy has been added to your list'
+    policies.value = JSON.parse(localStorage.getItem('policies') || '[]')
   }
 })
 
@@ -37,6 +58,10 @@ async function refresh(selectNewId?: string) {
   }
 }
 
+function viewPolicy(id: string) {
+  viewedPolicy.value = policies.value.find(p => p.id === id) || null
+}
+
 async function onDelete(id: string) {
   await del(`api/documents/${id}`)
   await refresh() 
@@ -49,6 +74,15 @@ function onUploaded(payload: { document: Document, detected?: import('../types')
   selectedId.value = payload.document.id
   sensitiveItems.value = (payload.detected || []).map(d => `${d.type}: ${d.value}`)
   console.log('Sensitive items set to:', sensitiveItems.value)
+}
+
+function deletePolicy(id: string) {
+  policies.value = policies.value.filter(p => p.id !== id)
+  localStorage.setItem('policies', JSON.stringify(policies.value))
+}
+
+function selectPolicy(id: string) {
+  console.log('Selected policy:', id)
 }
 
 onMounted(() => refresh())
@@ -93,7 +127,23 @@ onMounted(() => refresh())
       </section>
 
       <section class="md:col-span-1">
-        <DocListBox :docs="docs" :selected-id="selectedId" @select="(id: string) => { selectedId = id }"  @delete="onDelete" />
+        <DocListBox :docs="docs" :selected-id="selectedId" @select="(id: string) => { selectedId = id }"  @delete="onDelete" class="mb-2"/>
+        <PoliciesListBox :policies="policies" :selected-id="selectedId" @select="selectPolicy"  @view="viewPolicy" @delete="deletePolicy" />
+        <div v-if="viewedPolicy" class="mt-2 p-3 border rounded bg-slate-50">
+        <div class="font-medium mb-1">{{ viewedPolicy.name }}</div>
+        <ul class="text-sm text-slate-600 list-disc pl-5">
+          <li v-for="k in activeOptions" :key="k">
+            {{ optionLabels[k] || k }}
+          </li>
+          <li v-if="activeOptions.length === 0">None</li>
+        </ul>
+        <button
+          @click="viewedPolicy = null"
+          class="mt-2 px-2 py-1 text-xs text-red-500 border rounded hover:bg-red-50"
+        >
+          Close
+        </button>
+      </div>
       </section>
     </main>
 
