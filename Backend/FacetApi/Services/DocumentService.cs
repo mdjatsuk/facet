@@ -9,16 +9,18 @@ public class DocumentService : IDocumentService
     private readonly FacetDbContext _db;
     private readonly string _storageRoot;
     private readonly ILogger<DocumentService> _logger;
+    private readonly ISensitiveDataScanner _scanner;
 
     private const long MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".pdf", ".jpg", ".jpeg", ".png" };
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase) { "application/pdf", "image/jpeg", "image/png" };
 
-    public DocumentService(FacetDbContext db, IWebHostEnvironment env, ILogger<DocumentService> logger)
+    public DocumentService(FacetDbContext db, IWebHostEnvironment env, ILogger<DocumentService> logger, ISensitiveDataScanner scanner)
     {
         _db = db;
         _storageRoot = Path.Combine(env.ContentRootPath, "storage");
         _logger = logger;
+        _scanner = scanner;
         Directory.CreateDirectory(_storageRoot);
     }
 
@@ -79,7 +81,27 @@ public class DocumentService : IDocumentService
             await file.CopyToAsync(fs);
 
         await _db.SaveChangesAsync();
-        return new UploadResult(true, "Fail on edukalt üles laetud", doc);
+
+        List<Models.SensitiveItem>? detected = null;
+        try
+        {
+            if (contentType == "application/pdf")
+            {
+                // reopen file for reading
+                using var fs = new FileStream(destPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                detected = _scanner.ScanPdfStream(fs);
+            }
+            else if (contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                // OCR is not included by default. If you add an OCR library (Tesseract), extract text here and call _scanner.ScanText(text)
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Sensitive data scanning failed for file {File}", destPath);
+        }
+
+        return new UploadResult(true, "Fail on edukalt üles laetud", doc, detected);
     }
 
     public async Task<bool> DeleteAsync(Guid id)

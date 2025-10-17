@@ -42,9 +42,13 @@ async function onDelete(id: string) {
   await refresh() 
 }
 
-function onUploaded(doc: Document) {
-  refresh(doc.id) 
-  selectedId.value = doc.id 
+function onUploaded(payload: { document: Document, detected?: import('../types').SensitiveItem[] }) {
+  console.log('Upload response payload:', payload)
+  console.log('Detected items:', payload.detected)
+  refresh(payload.document.id)
+  selectedId.value = payload.document.id
+  sensitiveItems.value = (payload.detected || []).map(d => `${d.type}: ${d.value}`)
+  console.log('Sensitive items set to:', sensitiveItems.value)
 }
 
 onMounted(() => refresh())
