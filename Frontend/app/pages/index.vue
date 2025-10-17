@@ -10,9 +10,10 @@ const apiBase = useRuntimeConfig().public.apiBase as string
 const docs = ref<Document[]>([])
 const selectedId = ref<string | null>(null)
 const sensitiveItems = ref<string[]>([])
+const policies = ref<Array<{ id: string, name: string, options: Record<string, boolean>, createdAt: string }>>([])
 
 const selectedDoc = computed(() => 
-  docs.value.find(d => d.id === selectedId.value) || docs.value[0] || null
+  docs.value.find((d: Document) => d.id === selectedId.value) || docs.value[0] || null
 )
 const previewUrl = computed(() => selectedDoc.value ? `${apiBase}api/documents/${selectedDoc.value.id}/file` : '')
 const previewType = computed(() => selectedDoc.value?.contentType || '')
@@ -32,7 +33,7 @@ async function refresh(selectNewId?: string) {
     selectedId.value = selectNewId
   } else if (!selectedId.value && docs.value.length > 0) {
     selectedId.value = docs.value[0]?.id || null
-  } else if (selectedId.value && !docs.value.some(d => d.id === selectedId.value) && docs.value.length > 0) {
+  } else if (selectedId.value && !docs.value.some((d: Document) => d.id === selectedId.value) && docs.value.length > 0) {
     selectedId.value = docs.value[0]?.id || null
   }
 }
@@ -47,7 +48,20 @@ function onUploaded(doc: Document) {
   selectedId.value = doc.id 
 }
 
-onMounted(() => refresh())
+function loadPolicies() {
+  const stored = localStorage.getItem('policies')
+  policies.value = stored ? JSON.parse(stored) : []
+}
+
+function onDeletePolicy(id: string) {
+  policies.value = policies.value.filter((p: { id: string, name: string, options: Record<string, boolean>, createdAt: string }) => p.id !== id)
+  localStorage.setItem('policies', JSON.stringify(policies.value))
+}
+
+onMounted(() => {
+  refresh()
+  loadPolicies()
+})
 </script>
 <template>
   <div class="min-h-screen">
@@ -88,8 +102,9 @@ onMounted(() => refresh())
         <div v-else class="card p-6 w-full aspect-[210/297] max-h-[80vh] flex items-center justify-center muted">Nothing to display</div>
       </section>
 
-      <section class="md:col-span-1">
+      <section class="md:col-span-1 flex flex-col gap-6">
         <DocListBox :docs="docs" :selected-id="selectedId" @select="(id: string) => { selectedId = id }"  @delete="onDelete" />
+        <PolicyListBox :policies="policies" @delete="onDeletePolicy" />
       </section>
     </main>
 

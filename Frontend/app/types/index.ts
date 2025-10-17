@@ -16,3 +16,20 @@ export interface ApiError {
   data?: string
   message?: string
 }
+
+export interface Policy {
+  id: string
+  name: string
+  options: {
+    deleteAllEmails: boolean
+    removePhoneNumbers: boolean
+    removeNationalIds: boolean
+    anonymizeNames: boolean
+    removeMailingAddresses: boolean
+    deleteIPAddresses: boolean
+    removeFinancialInfo: boolean
+    stripMedicalInfo: boolean
+    removeUsernames: boolean
+  }
+  createdAt: string
+}
