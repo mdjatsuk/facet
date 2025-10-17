@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -26,11 +27,25 @@ const saving = ref(false)
 const message = ref<string | null>(null)
 
 async function submit() {
+  if (!name.value.trim()) {
+    message.value = 'Please enter a Policy Name before creating.'
+    return
+  }
   saving.value = true
   message.value = null
   try {
-    // For now we don't call the backend. Instead navigate back to the homepage
-    // and show a success notice there.
+    const newPolicy = {
+      id: Date.now().toString(),
+      name: name.value,
+      options: { ...options.value }
+    }
+
+    const saved = JSON.parse(localStorage.getItem('policies') || '[]')
+
+    saved.push(newPolicy)
+
+    localStorage.setItem('policies', JSON.stringify(saved))
+
     await router.push({ path: '/', query: { notice: 'policy-created' } })
   } catch (err: any) {
     message.value = err?.message || String(err)
