@@ -25,12 +25,35 @@ const options = ref<Record<string, boolean>>({
 const saving = ref(false)
 const message = ref<string | null>(null)
 
+const optionList = [
+  { key: 'deleteAllEmails', label: 'Delete all email addresses', desc: 'e.g., example@gmail.com, john.doe@company.com' },
+  { key: 'removePhoneNumbers', label: 'Remove phone numbers', desc: 'e.g., mobile, landline, or international formats' },
+  { key: 'removeNationalIds', label: 'Remove national ID numbers', desc: 'e.g., SSN, passport numbers, driver’s license numbers' },
+  { key: 'anonymizeNames', label: 'Anonymize personal names', desc: 'e.g., replacing "John Smith" with "Person A" or "[REDACTED]"' },
+  { key: 'removeMailingAddresses', label: 'Remove mailing addresses', desc: 'e.g., street names, apartment numbers, ZIP codes' },
+  { key: 'deleteIPAddresses', label: 'Delete IP addresses', desc: 'e.g., IPv4 or IPv6 addresses' },
+  { key: 'removeFinancialInfo', label: 'Remove financial information', desc: 'e.g., credit card numbers, bank account numbers' },
+  { key: 'stripMedicalInfo', label: 'Strip medical or health information', desc: 'e.g., diagnoses, treatment history' },
+  { key: 'removeUsernames', label: 'Remove usernames or login credentials', desc: 'e.g., "admin123", "user@example.com"' }
+]
+
 async function submit() {
+  if (!name.value.trim()) {
+    message.value = 'Please enter a policy name'
+    return
+  }
   saving.value = true
   message.value = null
   try {
-    // For now we don't call the backend. Instead navigate back to the homepage
-    // and show a success notice there.
+    const newPolicy = {
+      id: crypto.randomUUID(),
+      name: name.value,
+      options: { ...options.value },
+      createdAt: new Date().toISOString()
+    }
+    const policies = JSON.parse(localStorage.getItem('policies') || '[]')
+    policies.push(newPolicy)
+    localStorage.setItem('policies', JSON.stringify(policies))
     await router.push({ path: '/', query: { notice: 'policy-created' } })
   } catch (err: any) {
     message.value = err?.message || String(err)
@@ -53,75 +76,11 @@ async function submit() {
       <div class="mb-4">
         <h2 class="font-medium mb-2">Options</h2>
         <div class="space-y-3">
-          <label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.deleteAllEmails" class="accent-blue-500 h-4 w-4 mt-1" />
+          <label v-for="opt in optionList" :key="opt.key" class="flex items-start gap-3">
+            <input type="checkbox" v-model="options[opt.key]" class="accent-blue-500 h-4 w-4 mt-1" />
             <div>
-              <div class="font-medium">Delete all email addresses</div>
-              <div class="text-sm muted">e.g., example@gmail.com, john.doe@company.com</div>
-            </div>
-          </label>
-
-          <label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.removePhoneNumbers" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Remove phone numbers</div>
-              <div class="text-sm muted">e.g., mobile, landline, or international formats</div>
-            </div>
-          </label>
-
-          <label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.removeNationalIds" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Remove national ID numbers</div>
-              <div class="text-sm muted">e.g., SSN, passport numbers, driver’s license numbers</div>
-            </div>
-          </label>
-
-          <label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.anonymizeNames" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Anonymize personal names</div>
-              <div class="text-sm muted">e.g., replacing "John Smith" with "Person A" or "[REDACTED]"</div>
-            </div>
-          </label>
-
-          <label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.removeMailingAddresses" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Remove mailing addresses</div>
-              <div class="text-sm muted">e.g., street names, apartment numbers, ZIP codes</div>
-            </div>
-          </label>
-
-          <label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.deleteIPAddresses" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Delete IP addresses</div>
-              <div class="text-sm muted">e.g., IPv4 or IPv6 addresses</div>
-            </div>
-          </label>
-
-          <label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.removeFinancialInfo" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Remove financial information</div>
-              <div class="text-sm muted">e.g., credit card numbers, bank account numbers</div>
-            </div>
-          </label>
-
-          <label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.stripMedicalInfo" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Strip medical or health information</div>
-              <div class="text-sm muted">e.g., diagnoses, treatment history</div>
-            </div>
-          </label>
-
-          <label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.removeUsernames" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Remove usernames or login credentials</div>
-              <div class="text-sm muted">e.g., "admin123", "user@example.com"</div>
+              <div class="font-medium">{{ opt.label }}</div>
+              <div class="text-sm muted">{{ opt.desc }}</div>
             </div>
           </label>
         </div>
