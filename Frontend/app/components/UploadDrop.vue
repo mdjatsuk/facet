@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useApi } from '../composables/useApi'
 import type { UploadResult, Document, ApiError } from '~/types'
 
-const emit = defineEmits<{ (e: 'uploaded', doc: Document): void }>()
+const emit = defineEmits<{ (e: 'uploaded', payload: { document: Document, detected?: import('~/types').SensitiveItem[] }): void }>()
 
 const { upload } = useApi()
 const dragOver = ref(false)
@@ -42,7 +42,7 @@ async function doUpload(file: File) {
     const res = await upload<UploadResult>('api/documents/upload', file)
     if (res.success && res.document) {
       showToast('success', 'File uploaded successfully')
-      emit('uploaded', res.document)
+      emit('uploaded', { document: res.document, detected: (res as any).detected })
     } else {
       showToast('error', res.message || 'Upload failed')
     }

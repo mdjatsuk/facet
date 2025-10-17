@@ -17,6 +17,7 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.AllowAnyHeader().AllowAnyMethod().AllowCredentials().SetIsOriginAllowed(_ => true)));
 
 builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddSingleton<ISensitiveDataScanner, SensitiveDataScanner>();
 
 var app = builder.Build();
 

@@ -6,10 +6,18 @@ export interface Document {
   uploadedAt: string
 }
 
+export interface SensitiveItem {
+  type: string
+  value: string
+  indexStart: number
+  indexEnd: number
+}
+
 export interface UploadResult {
   success: boolean
   message: string
   document?: Document
+  detected?: SensitiveItem[]
 }
 
 export interface ApiError {
