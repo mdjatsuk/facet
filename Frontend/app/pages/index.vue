@@ -1,6 +1,6 @@
 <script setup lang="ts">
-
-import type { Document } from '../types'
+import { useDetected } from '../composables/useDetected'
+import type { Document, SensitiveItem } from '../types'  
 
 const { get, del } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
@@ -8,14 +8,18 @@ const apiBase = useRuntimeConfig().public.apiBase as string
 const docs = ref<Document[]>([])
 const selectedId = ref<string | null>(null)
 
+const { setDetected, getDetected, clearDetected } = useDetected()
+
 const policies = ref<{ id: string, name: string, options: Record<string, boolean> }[]>([])
-const sensitiveItems = ref<string[]>([])
 
 const selectedDoc = computed(() => 
   docs.value.find(d => d.id === selectedId.value) || docs.value[0] || null
 )
 const previewUrl = computed(() => selectedDoc.value ? `${apiBase}api/documents/${selectedDoc.value.id}/file` : '')
 const previewType = computed(() => selectedDoc.value?.contentType || '')
+
+const currentDetected = computed(() => getDetected(selectedId.value || '') || [])
+const uniqueTypes = computed(() => [...new Set(currentDetected.value.map(d => d.type))])
 
 const route = useRoute()
 const notice = ref<string | null>(null)
@@ -43,7 +47,6 @@ const activeOptions = computed(() => {
 watchEffect(() => {
   if (route.query.notice === 'policy-created') {
     notice.value = 'A new policy has been added to your list'
-    policies.value = JSON.parse(localStorage.getItem('policies') || '[]')
   }
 })
 
@@ -64,17 +67,22 @@ function viewPolicy(id: string) {
 
 async function onDelete(id: string) {
   await del(`api/documents/${id}`)
+  clearDetected(id) 
   await refresh() 
 }
 
-function onUploaded(payload: { document: Document, detected?: import('../types').SensitiveItem[] }) {
+function onUploaded(payload: { document: Document, detected?: SensitiveItem[] }) {
   console.log('Upload response payload:', payload)
   console.log('Detected items:', payload.detected)
+  setDetected(payload.document.id, payload.detected || [])  
   refresh(payload.document.id)
   selectedId.value = payload.document.id
-  sensitiveItems.value = (payload.detected || []).map(d => `${d.type}: ${d.value}`)
-  console.log('Sensitive items set to:', sensitiveItems.value)
+  console.log('Detected for doc:', payload.document.id, payload.detected)
 }
+
+watch(selectedId, () => {
+  console.log('Selected doc changed to:', selectedId.value)
+})
 
 function deletePolicy(id: string) {
   policies.value = policies.value.filter(p => p.id !== id)
@@ -85,8 +93,14 @@ function selectPolicy(id: string) {
   console.log('Selected policy:', id)
 }
 
-onMounted(() => refresh())
+onMounted(() => 
+{
+  policies.value = JSON.parse(localStorage.getItem('policies') || '[]')
+    refresh()
+})
+
 </script>
+
 <template>
   <div class="min-h-screen">
     <header class="bg-white border-b border-slate-100 shadow-sm">
@@ -118,7 +132,7 @@ onMounted(() => refresh())
     <main class="max-w-7xl mx-auto px-6 py-8 grid gap-6 md:grid-cols-5">
       <section class="space-y-4 md:col-span-1">
           <UploadDrop @uploaded="onUploaded" />
-          <SensitiveDataBox :items="sensitiveItems" />
+          <SensitiveDataBox :types="uniqueTypes" :doc-id="selectedId" />
       </section>
 
       <section class="md:col-span-3">
