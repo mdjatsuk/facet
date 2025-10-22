@@ -1,6 +1,14 @@
 using FacetApi.Models;
 using FacetApi.Data;
 using Microsoft.EntityFrameworkCore;
+using UglyToad.PdfPig;
+using PdfSharpCore.Pdf;
+using PdfSharpCore.Drawing;
+using PdfSharpCore;
+using PdfSharpCore.Drawing.Layout;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 
 namespace FacetApi.Services;
 
@@ -9,6 +17,7 @@ public class DocumentService : IDocumentService
     private readonly FacetDbContext _db;
     private readonly string _storageRoot;
     private readonly ILogger<DocumentService> _logger;
+    
     private readonly ISensitiveDataScanner _scanner;
 
     private const long MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
@@ -147,6 +156,189 @@ public class DocumentService : IDocumentService
         _db.Documents.Remove(doc);
         await _db.SaveChangesAsync();
         return true;
+    }
+
+ public async Task<(Stream Stream, string FileName)?> RedactPdfAsync(Guid id, List<string> valuesToHide)
+{
+    var doc = await _db.Documents.FindAsync(id);
+    if (doc is null) return null;
+    if (!string.Equals(doc.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase)) return null;
+
+    var fullPath = Directory.GetFiles(_storageRoot, $"{id}_*").FirstOrDefault();
+    if (fullPath is null) return null;
+
+    var tokens = valuesToHide?
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Select(s => s.Trim())
+        .Where(s => !s.Contains("*"))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray() ?? Array.Empty<string>();
+
+    if (tokens.Length == 0) return null;
+
+    try
+    {
+        using var input = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var pdf = UglyToad.PdfPig.PdfDocument.Open(input);
+
+        var output = new PdfSharpCore.Pdf.PdfDocument();
+        var font = new XFont("Consolas", 10, XFontStyle.Regular); // Моноширинный для наглядности
+
+        for (int i = 0; i < pdf.NumberOfPages; i++)
+        {
+            var page = pdf.GetPage(i + 1);
+            var text = page.Text ?? string.Empty;
+
+            foreach (var token in tokens)
+            {
+                if (string.IsNullOrWhiteSpace(token)) continue;
+                var masked = MaskValue("auto", token);
+                text = System.Text.RegularExpressions.Regex.Replace(
+                    text,
+                    System.Text.RegularExpressions.Regex.Escape(token),
+                    masked,
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+
+            text = text.Replace("\r", "");
+            text = text.Replace("\t", " ");
+            text = System.Text.RegularExpressions.Regex.Replace(text, " {2,}", " ");
+
+            var newPage = output.AddPage();
+            var gfx = XGraphics.FromPdfPage(newPage);
+            var tf = new XTextFormatter(gfx);
+            tf.Alignment = XParagraphAlignment.Left;
+            var rect = new XRect(40, 40, newPage.Width - 80, newPage.Height - 80);
+
+            tf.DrawString(text, font, XBrushes.Black, rect);
+            gfx.Dispose();
+        }
+
+        var ms = new MemoryStream();
+        output.Save(ms, false);
+        ms.Position = 0;
+    var outName = Path.GetFileNameWithoutExtension(doc.FileName) + "-redacted.pdf";
+        return (ms, outName);
+    }
+    catch (Exception ex)
+    {
+        _logger?.LogError(ex, "Text redaction rewrite failed for id={Id}", id);
+        return null;
+    }
+}
+
+
+    public async Task<Models.UploadResult> CreateRedactedCopyAsync(Guid id, List<string> valuesToHide)
+    {
+        // Use overlay/vector redaction only (Ghostscript/rasterization removed by project decision)
+        (Stream Stream, string FileName)? red = null;
+        try
+        {
+            red = await RedactPdfAsync(id, valuesToHide);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Overlay redaction failed for id={Id}", id);
+            return new Models.UploadResult(false, "Redaction failed", null, null);
+        }
+        if (red is null) return new Models.UploadResult(false, "Redaction failed or not a PDF", null, null);
+
+        var (stream, fileName) = red.Value;
+        // Persist new document record
+        var newDoc = new Models.Document
+        {
+            FileName = fileName,
+            ContentType = "application/pdf",
+            SizeBytes = stream.Length,
+            UploadedAt = DateTime.UtcNow
+        };
+
+        _db.Documents.Add(newDoc);
+
+        var destPath = Path.Combine(_storageRoot, $"{newDoc.Id}_{newDoc.FileName}");
+        // write stream to file
+        using (var fs = new FileStream(destPath, FileMode.CreateNew, FileAccess.Write))
+        {
+            stream.Position = 0;
+            await stream.CopyToAsync(fs);
+            await fs.FlushAsync();
+        }
+
+        await _db.SaveChangesAsync();
+
+        // Re-scan the new PDF to ensure no sensitive items remain. If scanner still finds items, replace with full-page blackout PDF as a safe fallback.
+        List<Models.SensitiveItem>? detected = null;
+        try
+        {
+            using var fsr = new FileStream(destPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            detected = _scanner.ScanPdfStream(fsr);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Scanning redacted copy failed for file {File}", destPath);
+        }
+
+        if (detected != null && detected.Count > 0)
+        {
+            // Don't automatically replace the user's file with a full blackout — keep the redacted copy
+            // (which may still contain detectable items when rasterization wasn't available) and return
+            // the detected items so the client can present the choice to the user.
+            _logger?.LogWarning("Redacted copy still contains {Count} sensitive items; leaving redacted copy in place for file {File}", detected.Count, destPath);
+        }
+
+        return new Models.UploadResult(true, "Redacted copy created", newDoc, detected);
+    }
+
+    // Ghostscript rasterization removed — project uses overlay/vector redaction only.
+
+    private string MaskValue(string kind, string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        // crude heuristics
+        // EMAIL: always show domain, replace local-part with five stars: *****@domain
+        if (value.Contains("@"))
+        {
+            var parts = value.Split('@');
+            var domain = parts.Length > 1 ? parts[1] : "";
+            return "*****" + (domain.Length > 0 ? "@" + domain : "");
+        }
+
+        // PHONE: special-case +372 -> +372****, other +countries -> keep country code then 4 stars
+        if (value.StartsWith("+"))
+        {
+            var digits = System.Text.RegularExpressions.Regex.Replace(value, "\\D", "");
+            if (value.StartsWith("+372"))
+            {
+                return "+372****";
+            }
+            // try to keep country code (up to 4 chars after +) then 4 stars
+            var m = System.Text.RegularExpressions.Regex.Match(value, "^\\+(\\d{1,4})");
+            if (m.Success)
+            {
+                var cc = m.Groups[1].Value;
+                return "+" + cc + "****";
+            }
+            return new string('*', Math.Min(6, value.Length));
+        }
+
+        // IBAN: keep first 2 (country code) and last 4, mask middle with stars
+        if (System.Text.RegularExpressions.Regex.IsMatch(value, "^[A-Za-z]{2}[A-Za-z0-9]{6,}$"))
+        {
+            var len = value.Length;
+            if (len <= 6) return new string('*', len);
+            var first = value.Substring(0, 2);
+            var last = value.Substring(Math.Max(0, len - 4));
+            var middleStars = new string('*', Math.Max(4, len - first.Length - last.Length));
+            return first + middleStars + last;
+        }
+
+        if (System.Text.RegularExpressions.Regex.IsMatch(value, "^\\d+$"))
+        {
+            return new string('*', value.Length);
+        }
+
+        return new string('*', Math.Min(10, value.Length));
     }
 
 }

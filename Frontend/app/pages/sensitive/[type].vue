@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'  
 import { useRoute, useRouter } from 'vue-router'  
 import { useDetected } from '~/composables/useDetected' 
+import { useSelection } from '~/composables/useSelection'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,25 +19,28 @@ const allDetected = computed(() => {
 })
 
 const itemsForType = computed(() => allDetected.value.filter(d => d.type === type.value))
-const selectedItems = ref<Set<number>>(new Set())  
+
+const { toggle, isSelected } = useSelection()
 
 function toggleItem(index: number) {
-  if (selectedItems.value.has(index)) {
-    selectedItems.value.delete(index)
-  } else {
-    selectedItems.value.add(index)
-  }
+  const items = itemsForType.value || []
+  const item = items[index]
+  if (!item) return
+  const key = `${type.value}:${index}`
+  toggle(docId.value, key, item.value)
+  try {
+    console.log('toggled', { docId: docId.value, key, value: item.value, count: (typeof window !== 'undefined' ? (window.localStorage.getItem('selectedToHide') || '') : '') })
+  } catch (e) { }
 }
 
-function hideAll() {
-  itemsForType.value.forEach((_, idx) => selectedItems.value.add(idx))
-  console.log('Hide all selected:', Array.from(selectedItems.value))
-}
+function selectAll() {
+  const items = itemsForType.value || []
+  items.forEach((item, idx) => {
+    const key = `${type.value}:${idx}`
 
-function applyHide() {
-  if (selectedItems.value.size === 0) return
-  alert(`Hiding ${selectedItems.value.size} items of type ${type.value} in doc ${docId.value}`)
-   router.push('/')
+    if (!isSelected(docId.value, key)) toggle(docId.value, key, item.value)
+  })
+  try { console.log('selectAll', { docId: docId.value, total: itemsForType.value.length }) } catch {}
 }
 
 onMounted(() => {
@@ -45,6 +49,10 @@ onMounted(() => {
     router.push('/')
   }
 })
+
+function applyAndBack() {
+  router.push('/')
+}
 </script>
 
 <template>
@@ -63,7 +71,7 @@ onMounted(() => {
         <li v-for="(item, idx) in itemsForType" :key="idx" class="flex items-center gap-3 p-3 border rounded">
           <input 
             type="checkbox" 
-            :checked="selectedItems.has(idx)" 
+            :checked="isSelected(docId, `${type}:${idx}`)" 
             @change="toggleItem(idx)" 
             class="accent-blue-500 h-4 w-4"
           />
@@ -74,22 +82,22 @@ onMounted(() => {
       </ul>
 
       <div class="flex gap-3 justify-end">
-        <button 
-          @click="hideAll" 
-          class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+          <button
+            @click="selectAll"
+            class="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg"
+          >
+            Select all
+          </button>
+        <button
+          @click="applyAndBack"
+          class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50"
           :disabled="itemsForType.length === 0"
         >
-          Hide all
+          Apply selection
         </button>
-        <button 
-          @click="applyHide" 
-          :disabled="selectedItems.size === 0"
-          class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50"
-        >
-          Apply Hide ({{ selectedItems.size }} selected)
-        </button>
-        <NuxtLink to="/" class="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg">Back</NuxtLink>
+        <NuxtLink to="/" class="px-4 py-2 bg-transparent hover:bg-slate-50 text-slate-700 rounded-lg">Back</NuxtLink>
       </div>
     </div>
   </div>
 </template>
+

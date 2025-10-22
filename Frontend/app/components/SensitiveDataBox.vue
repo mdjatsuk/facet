@@ -32,6 +32,12 @@ const props = defineProps<{
 const docIdRef = toRef(props, 'docId')
 const docId = computed(() => docIdRef.value || '')
 
+import { useSelection } from '~/composables/useSelection'
+import { useApi } from '~/composables/useApi'
+const { toggle, isSelected, getValues, count } = useSelection()
+const { postBlob } = useApi()
+
+
 function linkFor(t: string) {
   return { path: `/sensitive/${encodeURIComponent(t)}`, query: { docId: docId.value || undefined } }
 }
