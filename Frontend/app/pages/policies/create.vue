@@ -6,7 +6,6 @@ import { useApi } from '../../composables/useApi'
 import { useRuntimeConfig } from 'nuxt/app'
 
 const router = useRouter()
-// keep useApi import for parity if needed later
 const { get, del } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
 

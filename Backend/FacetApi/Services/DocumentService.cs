@@ -20,7 +20,7 @@ public class DocumentService : IDocumentService
     
     private readonly ISensitiveDataScanner _scanner;
 
-    private const long MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
+    private const long MAX_UPLOAD_BYTES = 10 * 1024 * 1024; 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".pdf", ".jpg", ".jpeg", ".png" };
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase) { "application/pdf", "image/jpeg", "image/png" };
 
@@ -42,7 +42,6 @@ public class DocumentService : IDocumentService
         if (doc is null) return null;
         var fullPath = Directory.GetFiles(_storageRoot, $"{id}_*").FirstOrDefault();
         if (fullPath is null) return null;
-        // Open for read and allow other processes to read/write where possible to reduce file locks.
         try
         {
             var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -96,13 +95,11 @@ public class DocumentService : IDocumentService
         {
             if (contentType == "application/pdf")
             {
-                // reopen file for reading
                 using var fs = new FileStream(destPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 detected = _scanner.ScanPdfStream(fs);
             }
             else if (contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             {
-                // OCR is not included by default. If you add an OCR library (Tesseract), extract text here and call _scanner.ScanText(text)
             }
         }
         catch (Exception ex)
@@ -120,10 +117,9 @@ public class DocumentService : IDocumentService
         var path = Directory.GetFiles(_storageRoot, $"{id}_*").FirstOrDefault();
         if (path is not null && File.Exists(path))
         {
-            // Try to delete with retries in case a different process still holds the file handle
             const int maxAttempts = 5;
             var attempt = 0;
-            var delay = 100; // ms
+            var delay = 100; 
             while (true)
             {
                 try
@@ -138,7 +134,6 @@ public class DocumentService : IDocumentService
                     if (attempt >= maxAttempts)
                     {
                         _logger?.LogError(ioEx, "Failed to delete file after {Attempts} attempts path={Path} id={Id}", attempt, path, id);
-                        // swallow and proceed to remove DB record to avoid leaving stale DB entries, but still notify
                         break;
                     }
                     _logger?.LogWarning(ioEx, "File in use, retrying delete attempt {Attempt} for path={Path}", attempt, path);
@@ -182,7 +177,7 @@ public class DocumentService : IDocumentService
         using var pdf = UglyToad.PdfPig.PdfDocument.Open(input);
 
         var output = new PdfSharpCore.Pdf.PdfDocument();
-        var font = new XFont("Consolas", 10, XFontStyle.Regular); // Моноширинный для наглядности
+        var font = new XFont("Consolas", 10, XFontStyle.Regular); 
 
         for (int i = 0; i < pdf.NumberOfPages; i++)
         {
@@ -231,7 +226,6 @@ public class DocumentService : IDocumentService
 
     public async Task<Models.UploadResult> CreateRedactedCopyAsync(Guid id, List<string> valuesToHide)
     {
-        // Use overlay/vector redaction only (Ghostscript/rasterization removed by project decision)
         (Stream Stream, string FileName)? red = null;
         try
         {
@@ -245,7 +239,6 @@ public class DocumentService : IDocumentService
         if (red is null) return new Models.UploadResult(false, "Redaction failed or not a PDF", null, null);
 
         var (stream, fileName) = red.Value;
-        // Persist new document record
         var newDoc = new Models.Document
         {
             FileName = fileName,
@@ -257,7 +250,6 @@ public class DocumentService : IDocumentService
         _db.Documents.Add(newDoc);
 
         var destPath = Path.Combine(_storageRoot, $"{newDoc.Id}_{newDoc.FileName}");
-        // write stream to file
         using (var fs = new FileStream(destPath, FileMode.CreateNew, FileAccess.Write))
         {
             stream.Position = 0;
@@ -267,7 +259,6 @@ public class DocumentService : IDocumentService
 
         await _db.SaveChangesAsync();
 
-        // Re-scan the new PDF to ensure no sensitive items remain. If scanner still finds items, replace with full-page blackout PDF as a safe fallback.
         List<Models.SensitiveItem>? detected = null;
         try
         {
@@ -281,22 +272,15 @@ public class DocumentService : IDocumentService
 
         if (detected != null && detected.Count > 0)
         {
-            // Don't automatically replace the user's file with a full blackout — keep the redacted copy
-            // (which may still contain detectable items when rasterization wasn't available) and return
-            // the detected items so the client can present the choice to the user.
             _logger?.LogWarning("Redacted copy still contains {Count} sensitive items; leaving redacted copy in place for file {File}", detected.Count, destPath);
         }
 
         return new Models.UploadResult(true, "Redacted copy created", newDoc, detected);
     }
 
-    // Ghostscript rasterization removed — project uses overlay/vector redaction only.
-
     private string MaskValue(string kind, string value)
     {
         if (string.IsNullOrEmpty(value)) return value;
-        // crude heuristics
-        // EMAIL: always show domain, replace local-part with five stars: *****@domain
         if (value.Contains("@"))
         {
             var parts = value.Split('@');
@@ -304,7 +288,6 @@ public class DocumentService : IDocumentService
             return "*****" + (domain.Length > 0 ? "@" + domain : "");
         }
 
-        // PHONE: special-case +372 -> +372****, other +countries -> keep country code then 4 stars
         if (value.StartsWith("+"))
         {
             var digits = System.Text.RegularExpressions.Regex.Replace(value, "\\D", "");
@@ -312,7 +295,6 @@ public class DocumentService : IDocumentService
             {
                 return "+372****";
             }
-            // try to keep country code (up to 4 chars after +) then 4 stars
             var m = System.Text.RegularExpressions.Regex.Match(value, "^\\+(\\d{1,4})");
             if (m.Success)
             {
@@ -322,7 +304,6 @@ public class DocumentService : IDocumentService
             return new string('*', Math.Min(6, value.Length));
         }
 
-        // IBAN: keep first 2 (country code) and last 4, mask middle with stars
         if (System.Text.RegularExpressions.Regex.IsMatch(value, "^[A-Za-z]{2}[A-Za-z0-9]{6,}$"))
         {
             var len = value.Length;

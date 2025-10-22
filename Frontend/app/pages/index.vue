@@ -108,12 +108,9 @@ async function applySelected() {
   const vals = getValues(selectedId.value)
   console.log('ApplySelected called for', selectedId.value, 'values:', vals)
   if (!vals || vals.length === 0) { alert('No selections for the selected document'); return }
-  // call backend to create saved redacted copy
   try {
-    // send values to backend and request creation of a persisted redacted copy (useApi.post includes apiBase)
     const res = await post<any>(`/api/documents/${selectedId.value}/redact/save`, { values: vals })
     console.log('Redacted copy created', res)
-    // if API returns created document id, select it
     const docId = res?.document?.id || res?.Document?.id
     if (docId) await refresh(docId)
     else await refresh()
@@ -123,9 +120,7 @@ async function applySelected() {
     alert('Failed to create redacted copy')
     return
   }
-  // refresh list
   await refresh()
-  // clear selections for this doc
   clear(selectedId.value)
 }
 

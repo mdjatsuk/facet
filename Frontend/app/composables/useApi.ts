@@ -3,7 +3,6 @@ export function useApi() {
   const base = config.public.apiBase
   function makeUrl(path: string) {
     if (!base) return path
-    // ensure exactly one slash between base and path
     if (base.endsWith('/') && path.startsWith('/')) return base + path.substring(1)
     if (!base.endsWith('/') && !path.startsWith('/')) return base + '/' + path
     return base + path
