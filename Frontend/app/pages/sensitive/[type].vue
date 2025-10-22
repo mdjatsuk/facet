@@ -20,34 +20,28 @@ const allDetected = computed(() => {
 
 const itemsForType = computed(() => allDetected.value.filter(d => d.type === type.value))
 
-const { toggle, isSelected } = useSelection()
+const { toggle, isSelected, toggleAll, getValues } = useSelection()
 
-function toggleItem(index: number) {
+const selectedValues = computed(() => getValues(docId.value))
+
+const allSelected = computed(() => {
   const items = itemsForType.value || []
-  const item = items[index]
-  if (!item) return
-  const key = `${type.value}:${index}`
-  toggle(docId.value, key, item.value)
-  try {
-    console.log('toggled', { docId: docId.value, key, value: item.value, count: (typeof window !== 'undefined' ? (window.localStorage.getItem('selectedToHide') || '') : '') })
-  } catch (e) { }
+  if (items.length === 0) return false
+  return items.every(i => selectedValues.value.includes(i.value))
+})
+
+function toggleItemByValue(value: string) {
+  if (!value) return
+  toggle(docId.value, value, value)
 }
 
 function selectAll() {
-  const items = itemsForType.value || []
-  items.forEach((item, idx) => {
-    const key = `${type.value}:${idx}`
-
-    if (!isSelected(docId.value, key)) toggle(docId.value, key, item.value)
-  })
-  try { console.log('selectAll', { docId: docId.value, total: itemsForType.value.length }) } catch {}
+  const values = itemsForType.value.map(i => i.value)
+  toggleAll(docId.value, values)
 }
 
 onMounted(() => {
-  if (!docId.value) {
-    console.error('No docId in query! Redirecting to index.')
-    router.push('/')
-  }
+  if (!docId.value) router.push('/')
 })
 
 function applyAndBack() {
@@ -68,17 +62,17 @@ function applyAndBack() {
       </div>
 
       <ul v-else class="space-y-2 mb-4">
-        <li v-for="(item, idx) in itemsForType" :key="idx" class="flex items-center gap-3 p-3 border rounded">
+        <li v-for="(item, idx) in itemsForType" :key="item.value + '::' + idx" class="flex items-center gap-3 p-3 border rounded">
           <input 
             type="checkbox" 
-            :checked="isSelected(docId, `${type}:${idx}`)" 
-            @change="toggleItem(idx)" 
+            :checked="isSelected(docId, item.value)" 
+            @change="() => toggleItemByValue(item.value)" 
             class="accent-blue-500 h-4 w-4"
           />
           <span class="font-mono text-sm break-all">{{ item.value }}</span>
 
           <span class="text-xs text-slate-400 ml-2">({{ item.indexStart }}–{{ item.indexEnd }})</span>
-        </li>
+  </li>
       </ul>
 
       <div class="flex gap-3 justify-end">

@@ -18,7 +18,6 @@ function openFilePicker() {
 }
 
 function onZoneClick() {
-  // don't open file picker while dragging files over or while busy
   if (dragOver.value || busy.value) return
   openFilePicker()
 }
@@ -85,7 +84,6 @@ function onDrop(e: DragEvent) {
         aria-label="Upload document"
       >
         <div class="flex flex-col items-center gap-1 text-center">
-          <!-- upload icon -->
           <svg class="h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0l3.5 3.5M12 4L8.5 7.5" />
           </svg>
