@@ -11,5 +11,9 @@ public interface IDocumentService
     (Stream Stream, string ContentType, string FileName)? GetFile(Guid id);
 
     Task<bool> DeleteAsync(Guid id);
+    
+    Task<(Stream Stream, string FileName)?> RedactPdfAsync(Guid id, List<string> valuesToHide);
+    
+    Task<Models.UploadResult> CreateRedactedCopyAsync(Guid id, List<string> valuesToHide);
 
 }

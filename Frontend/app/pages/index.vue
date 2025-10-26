@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useDetected } from '../composables/useDetected'
+import { useSelection } from '../composables/useSelection'
 import type { Document, SensitiveItem } from '../types'  
 
-const { get, del } = useApi()
+const { get, del, post } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
 
 const docs = ref<Document[]>([])
@@ -23,6 +24,9 @@ const uniqueTypes = computed(() => [...new Set(currentDetected.value.map(d => d.
 
 const route = useRoute()
 const notice = ref<string | null>(null)
+
+const { getValues, clear } = useSelection()
+const selectedCount = computed(() => (getValues(selectedId.value || '') || []).length)
 
 const viewedPolicy = ref<{ id: string, name: string, options: Record<string, boolean> } | null>(null)
 
@@ -99,6 +103,27 @@ onMounted(() =>
     refresh()
 })
 
+async function applySelected() {
+  if (!selectedId.value) return
+  const vals = getValues(selectedId.value)
+  console.log('ApplySelected called for', selectedId.value, 'values:', vals)
+  if (!vals || vals.length === 0) { alert('No selections for the selected document'); return }
+  try {
+    const res = await post<any>(`/api/documents/${selectedId.value}/redact/save`, { values: vals })
+    console.log('Redacted copy created', res)
+    const docId = res?.document?.id || res?.Document?.id
+    if (docId) await refresh(docId)
+    else await refresh()
+  }
+  catch (e) {
+    console.error('Save redact failed', e)
+    alert('Failed to create redacted copy')
+    return
+  }
+  await refresh()
+  clear(selectedId.value)
+}
+
 </script>
 
 <template>
@@ -133,6 +158,12 @@ onMounted(() =>
       <section class="space-y-4 md:col-span-1">
           <UploadDrop @uploaded="onUploaded" />
           <SensitiveDataBox :types="uniqueTypes" :doc-id="selectedId" />
+          <div class="mt-2 flex gap-2 items-center">
+            <button @click="applySelected" class="px-3 py-2 bg-blue-600 text-white rounded" :disabled="!selectedId || selectedCount === 0">
+              Apply Selected
+            </button>
+            <div class="text-sm text-slate-600">Selected: {{ selectedCount }}</div>
+          </div>
       </section>
 
       <section class="md:col-span-3">

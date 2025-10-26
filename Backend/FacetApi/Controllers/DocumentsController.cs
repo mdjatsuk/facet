@@ -49,4 +49,29 @@ public class DocumentsController : ControllerBase
         return NoContent(); 
     }
 
+    public class RedactRequest { public List<string>? Values { get; set; } }
+
+    [HttpPost("{id:guid}/redact")]
+    public async Task<IActionResult> Redact(Guid id, [FromBody] RedactRequest req)
+    {
+        var values = req?.Values ?? new List<string>();
+        var res = await _svc.RedactPdfAsync(id, values);
+        if (res is null) return NotFound();
+
+        var stream = res.Value.Stream;
+        var fileName = res.Value.FileName ?? "redacted.pdf";
+        var encoded = Uri.EscapeDataString(fileName);
+        Response.Headers["Content-Disposition"] = $"attachment; filename*=UTF-8''{encoded}";
+        return new FileStreamResult(stream, "application/pdf");
+    }
+
+    [HttpPost("{id:guid}/redact/save")]
+    public async Task<IActionResult> RedactAndSave(Guid id, [FromBody] RedactRequest req)
+    {
+        var values = req?.Values ?? new List<string>();
+        var res = await _svc.CreateRedactedCopyAsync(id, values);
+        if (!res.Success) return BadRequest(res.Message);
+        return Ok(res);
+    }
+
 }
