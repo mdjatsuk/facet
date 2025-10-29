@@ -9,6 +9,7 @@ public interface IDocumentService
     Task<Document?> GetAsync(Guid id);
     Task<UploadResult> UploadAsync(IFormFile file);
     (Stream Stream, string ContentType, string FileName)? GetFile(Guid id);
+    Task<string?> GetPreviewAsync(Guid id);
 
     Task<bool> DeleteAsync(Guid id);
     

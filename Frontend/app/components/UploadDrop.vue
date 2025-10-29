@@ -10,7 +10,7 @@ const dragOver = ref(false)
 const busy = ref(false)
 const toast = ref<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
-const allowedExt = ['.pdf', '.jpg', '.jpeg', '.png']
+const allowedExt = ['.doc', '.docx', '.txt']
 const fileInput = ref<HTMLInputElement | null>(null)
 
 function openFilePicker() {
@@ -34,7 +34,7 @@ function showToast(type: 'success' | 'error' | 'info', message: string) {
 
 async function doUpload(file: File) {
   const ext = extOf(file.name)
-  if (!allowedExt.includes(ext)) return showToast('error', 'Unsupported file type. Allowed: PDF, JPG, PNG.')
+  if (!allowedExt.includes(ext)) return showToast('error', 'Unsupported file type. Allowed: DOC, DOCX, TXT.')
   if (file.size > MAX_UPLOAD_BYTES) return showToast('error', 'File is too large. Maximum 10 MB allowed.')
   busy.value = true
   try {
@@ -88,8 +88,8 @@ function onDrop(e: DragEvent) {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0l3.5 3.5M12 4L8.5 7.5" />
           </svg>
           <div class="text-lg font-semibold text-slate-800">Upload file</div>
-          <p class="text-xs text-slate-500">PDF, JPG, PNG — up to 10MB</p>
-          <input ref="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" @change="onInput" class="hidden" id="fileInput">
+          <p class="text-xs text-slate-500">DOC, DOCX, TXT — up to 10MB</p>
+          <input ref="fileInput" type="file" accept=".doc,.docx,.txt" @change="onInput" class="hidden" id="fileInput">
           <div v-if="busy" class="text-xs text-slate-500 animate-pulse mt-1">Uploading…</div>
         </div>
       </div>
