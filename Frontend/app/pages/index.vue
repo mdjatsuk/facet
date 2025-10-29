@@ -12,6 +12,7 @@ const selectedId = ref<string | null>(null)
 const { setDetected, getDetected, clearDetected } = useDetected()
 
 const policies = ref<{ id: string, name: string, options: Record<string, boolean> }[]>([])
+const selectedPolicyId = ref<string | null>(null)
 
 const selectedDoc = computed(() => 
   docs.value.find(d => d.id === selectedId.value) || docs.value[0] || null
@@ -25,7 +26,7 @@ const uniqueTypes = computed(() => [...new Set(currentDetected.value.map(d => d.
 const route = useRoute()
 const notice = ref<string | null>(null)
 
-const { getValues, clear } = useSelection()
+const { getValues, clear, setAll } = useSelection()
 const selectedCount = computed(() => (getValues(selectedId.value || '') || []).length)
 
 const viewedPolicy = ref<{ id: string, name: string, options: Record<string, boolean> } | null>(null)
@@ -94,7 +95,7 @@ function deletePolicy(id: string) {
 }
 
 function selectPolicy(id: string) {
-  console.log('Selected policy:', id)
+  selectedPolicyId.value = id
 }
 
 onMounted(() => 
@@ -102,6 +103,56 @@ onMounted(() =>
   policies.value = JSON.parse(localStorage.getItem('policies') || '[]')
     refresh()
 })
+
+async function usePolicy(id?: string) {
+  const pid = id ?? selectedPolicyId.value
+  if (!pid) {
+    notice.value = 'No policy selected'
+    return
+  }
+  const policy = policies.value.find(p => p.id === pid)
+  if (!policy) {
+    notice.value = 'Policy not found'
+    return
+  }
+  if (!selectedId.value) {
+    notice.value = 'No document selected'
+    return
+  }
+
+  // Map scanner types to policy option keys
+  const typeToOptionKey: Record<string, string> = {
+    email: 'deleteAllEmails',
+    phone: 'removePhoneNumbers',
+    id: 'removeNationalIds',
+    iban: 'removeFinancialInfo',
+    // extend this mapping if you add more detected types or policy options
+  }
+
+  const values = currentDetected.value
+    .filter(d => {
+      const opt = typeToOptionKey[d.type]
+      return opt ? !!policy.options[opt] : false
+    })
+    .map(d => d.value)
+    .filter(Boolean)
+
+  if (values.length === 0) {
+    notice.value = `Policy "${policy.name}" did not match any items in the document`
+    return
+  }
+
+  setAll(selectedId.value, values)
+  notice.value = `Applied policy "${policy.name}" — ${values.length} items selected`
+
+  try {
+    await applySelected()
+  }
+  catch (e) {
+    console.error('UsePolicy applySelected failed', e)
+    notice.value = `Failed to apply policy \"${policy.name}\"`
+  }
+}
 
 async function applySelected() {
   if (!selectedId.value) return
@@ -160,7 +211,7 @@ async function applySelected() {
           <SensitiveDataBox :types="uniqueTypes" :doc-id="selectedId" />
           <div class="mt-2 flex gap-2 items-center">
             <button @click="applySelected" class="px-3 py-2 bg-blue-600 text-white rounded" :disabled="!selectedId || selectedCount === 0">
-              Apply Selected
+              Apply Changes
             </button>
             <div class="text-sm text-slate-600">Selected: {{ selectedCount }}</div>
           </div>
@@ -173,7 +224,7 @@ async function applySelected() {
 
       <section class="md:col-span-1">
         <DocListBox :docs="docs" :selected-id="selectedId" @select="(id: string) => { selectedId = id }"  @delete="onDelete" class="mb-2"/>
-        <PoliciesListBox :policies="policies" :selected-id="selectedId" @select="selectPolicy"  @view="viewPolicy" @delete="deletePolicy" />
+  <PoliciesListBox :policies="policies" :selected-id="selectedPolicyId" @select="selectPolicy"  @view="viewPolicy" @delete="deletePolicy" @use="usePolicy" />
         <div v-if="viewedPolicy" class="mt-2 p-3 border rounded bg-slate-50">
         <div class="font-medium mb-1">{{ viewedPolicy.name }}</div>
         <ul class="text-sm text-slate-600 list-disc pl-5">
@@ -192,6 +243,6 @@ async function applySelected() {
       </section>
     </main>
 
-    <footer class="py-8 text-center muted">FACET 2025 </footer>
+    <footer class="py-8 text-center muted">   FACET 2025 </footer>
   </div>
 </template>
