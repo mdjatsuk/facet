@@ -167,7 +167,7 @@ async function applySelected() {
       </section>
 
       <section class="md:col-span-3">
-        <PreviewPane v-if="selectedDoc" :url="previewUrl" :contentType="previewType" />
+        <PreviewPane v-if="selectedDoc" :url="previewUrl" :contentType="previewType" :documentId="selectedDoc.id" />
         <div v-else class="card p-6 w-full aspect-[210/297] max-h-[80vh] flex items-center justify-center muted">Nothing to display</div>
       </section>
 

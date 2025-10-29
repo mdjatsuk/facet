@@ -9,6 +9,9 @@ using PdfSharpCore.Drawing.Layout;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.Versioning;
+using DocumentFormat.OpenXml.Packaging;
+using System.Text;
+using DocModel = FacetApi.Models.Document;
 
 namespace FacetApi.Services;
 
@@ -21,8 +24,12 @@ public class DocumentService : IDocumentService
     private readonly ISensitiveDataScanner _scanner;
 
     private const long MAX_UPLOAD_BYTES = 10 * 1024 * 1024; 
-    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".pdf", ".jpg", ".jpeg", ".png" };
-    private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase) { "application/pdf", "image/jpeg", "image/png" };
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".doc", ".docx", ".txt" };
+    private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase) { 
+        "application/msword", 
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+        "text/plain" 
+    };
 
     public DocumentService(FacetDbContext db, IWebHostEnvironment env, ILogger<DocumentService> logger, ISensitiveDataScanner scanner)
     {
@@ -33,8 +40,8 @@ public class DocumentService : IDocumentService
         Directory.CreateDirectory(_storageRoot);
     }
 
-    public IQueryable<Document> Query() => _db.Documents.AsNoTracking().OrderByDescending(d => d.UploadedAt);
-    public async Task<Document?> GetAsync(Guid id) => await _db.Documents.FindAsync(id);
+    public IQueryable<DocModel> Query() => _db.Documents.AsNoTracking().OrderByDescending(d => d.UploadedAt);
+    public async Task<DocModel?> GetAsync(Guid id) => await _db.Documents.FindAsync(id);
 
     public (Stream Stream, string ContentType, string FileName)? GetFile(Guid id)
     {
@@ -54,6 +61,253 @@ public class DocumentService : IDocumentService
         }
     }
 
+    public async Task<string?> GetPreviewAsync(Guid id)
+    {
+        var doc = await _db.Documents.FindAsync(id);
+        if (doc is null) return null;
+        
+        var fullPath = Directory.GetFiles(_storageRoot, $"{id}_*").FirstOrDefault();
+        if (fullPath is null) return null;
+
+        try
+        {
+            // Handle .txt files
+            if (doc.ContentType == "text/plain")
+            {
+                var text = await File.ReadAllTextAsync(fullPath);
+                return $@"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ 
+            font-family: 'Courier New', monospace; 
+            white-space: pre-wrap; 
+            padding: 20px; 
+            background: white; 
+            color: black;
+            margin: 0;
+        }}
+    </style>
+</head>
+<body>{System.Net.WebUtility.HtmlEncode(text)}</body>
+</html>";
+            }
+            
+            // Handle .docx files
+            if (doc.ContentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            {
+                return ConvertDocxToHtmlAsync(fullPath);
+            }
+            
+            // Handle .doc files (legacy format)
+            if (doc.ContentType == "application/msword")
+            {
+                // .doc format requires different handling - for now return a message
+                return $@"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ font-family: Arial, sans-serif; padding: 20px; }}
+        .message {{ background: #f0f0f0; padding: 20px; border-radius: 5px; }}
+    </style>
+</head>
+<body>
+    <div class='message'>
+        <h3>Legacy .doc format</h3>
+        <p>Please download the file to view it. Convert to .docx format for inline preview.</p>
+        <a href='/api/documents/{id}/file' download>Download File</a>
+    </div>
+</body>
+</html>";
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to generate preview for id={Id}", id);
+            return null;
+        }
+    }
+
+    private string ConvertDocxToHtmlAsync(string docxPath)
+    {
+        var html = new StringBuilder();
+        html.Append(@"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body { 
+            font-family: 'Calibri', 'Arial', sans-serif; 
+            padding: 40px; 
+            background: white; 
+            color: black;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        p { margin: 0 0 10px 0; }
+        h1 { font-size: 2em; margin: 0.67em 0; }
+        h2 { font-size: 1.5em; margin: 0.75em 0; }
+        h3 { font-size: 1.17em; margin: 0.83em 0; }
+        .bold { font-weight: bold; }
+        .italic { font-style: italic; }
+        .underline { text-decoration: underline; }
+        table { border-collapse: collapse; margin: 10px 0; }
+        td, th { border: 1px solid #ddd; padding: 8px; }
+    </style>
+</head>
+<body>");
+
+        using (var doc = WordprocessingDocument.Open(docxPath, false))
+        {
+            var body = doc.MainDocumentPart?.Document?.Body;
+            if (body != null)
+            {
+                foreach (var element in body.Elements())
+                {
+                    if (element is DocumentFormat.OpenXml.Wordprocessing.Paragraph para)
+                    {
+                        var paraHtml = ConvertParagraphToHtml(para);
+                        html.Append(paraHtml);
+                    }
+                    else if (element is DocumentFormat.OpenXml.Wordprocessing.Table table)
+                    {
+                        html.Append("<table>");
+                        foreach (var row in table.Elements<DocumentFormat.OpenXml.Wordprocessing.TableRow>())
+                        {
+                            html.Append("<tr>");
+                            foreach (var cell in row.Elements<DocumentFormat.OpenXml.Wordprocessing.TableCell>())
+                            {
+                                html.Append("<td>");
+                                foreach (var cellPara in cell.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
+                                {
+                                    html.Append(ConvertParagraphToHtml(cellPara));
+                                }
+                                html.Append("</td>");
+                            }
+                            html.Append("</tr>");
+                        }
+                        html.Append("</table>");
+                    }
+                }
+            }
+        }
+
+        html.Append("</body></html>");
+        return html.ToString();
+    }
+
+    private string ExtractTextFromDocxAsync(string docxPath)
+    {
+        var text = new StringBuilder();
+        
+        using (var doc = WordprocessingDocument.Open(docxPath, false))
+        {
+            var body = doc.MainDocumentPart?.Document?.Body;
+            if (body != null)
+            {
+                text.Append(body.InnerText);
+            }
+        }
+        
+        return text.ToString();
+    }
+
+    private async Task<(Stream Stream, string FileName)> RedactDocxAsync(string docxPath, string[] tokens, string originalFileName)
+    {
+        // Create a copy in memory
+        var ms = new MemoryStream();
+        using (var sourceStream = new FileStream(docxPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+            await sourceStream.CopyToAsync(ms);
+        }
+        ms.Position = 0;
+
+        // Open and modify the copy
+        using (var doc = WordprocessingDocument.Open(ms, true))
+        {
+            var body = doc.MainDocumentPart?.Document?.Body;
+            if (body != null)
+            {
+                foreach (var text in body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Text>())
+                {
+                    if (string.IsNullOrWhiteSpace(text.Text)) continue;
+                    
+                    var modifiedText = text.Text;
+                    foreach (var token in tokens)
+                    {
+                        if (string.IsNullOrWhiteSpace(token)) continue;
+                        var masked = MaskValue("auto", token);
+                        modifiedText = System.Text.RegularExpressions.Regex.Replace(
+                            modifiedText,
+                            System.Text.RegularExpressions.Regex.Escape(token),
+                            masked,
+                            System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                        );
+                    }
+                    
+                    if (modifiedText != text.Text)
+                    {
+                        text.Text = modifiedText;
+                    }
+                }
+            }
+            
+            doc.MainDocumentPart?.Document?.Save();
+        }
+
+        ms.Position = 0;
+        var outName = Path.GetFileNameWithoutExtension(originalFileName) + "-redacted.docx";
+        return (ms, outName);
+    }
+
+    private string ConvertParagraphToHtml(DocumentFormat.OpenXml.Wordprocessing.Paragraph para)
+    {
+        var sb = new StringBuilder();
+        var style = para.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
+        
+        var tag = style switch
+        {
+            "Heading1" => "h1",
+            "Heading2" => "h2",
+            "Heading3" => "h3",
+            _ => "p"
+        };
+
+        sb.Append($"<{tag}>");
+
+        foreach (var run in para.Elements<DocumentFormat.OpenXml.Wordprocessing.Run>())
+        {
+            var text = run.InnerText;
+            var isBold = run.RunProperties?.Bold != null;
+            var isItalic = run.RunProperties?.Italic != null;
+            var isUnderline = run.RunProperties?.Underline != null;
+            
+            var classes = new List<string>();
+            if (isBold) classes.Add("bold");
+            if (isItalic) classes.Add("italic");
+            if (isUnderline) classes.Add("underline");
+
+            if (classes.Any())
+            {
+                sb.Append($"<span class='{string.Join(" ", classes)}'>");
+                sb.Append(System.Net.WebUtility.HtmlEncode(text));
+                sb.Append("</span>");
+            }
+            else
+            {
+                sb.Append(System.Net.WebUtility.HtmlEncode(text));
+            }
+        }
+
+        sb.Append($"</{tag}>");
+        return sb.ToString();
+    }
+
     public async Task<UploadResult> UploadAsync(IFormFile file)
     {
         if (file is null || file.Length == 0)
@@ -63,19 +317,19 @@ public class DocumentService : IDocumentService
 
         var ext = Path.GetExtension(file.FileName);
         if (!AllowedExtensions.Contains(ext))
-            return new UploadResult(false, "Pole toetatud failitüüp. Lubatud: PDF, JPG, PNG.", null);
+            return new UploadResult(false, "Pole toetatud failitüüp. Lubatud: DOC, DOCX, TXT.", null);
 
         var contentType = !string.IsNullOrWhiteSpace(file.ContentType) ? file.ContentType : ext switch
         {
-            ".pdf" => "application/pdf",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".doc" => "application/msword",
+            ".txt" => "text/plain",
             _ => "application/octet-stream"
         };
         if (!AllowedContentTypes.Contains(contentType))
-            return new UploadResult(false, "Pole toetatud failitüüp. Lubatud: PDF, JPG, PNG.", null);
+            return new UploadResult(false, "Pole toetatud failitüüp. Lubatud: DOC, DOCX, TXT.", null);
 
-        var doc = new Document
+        var doc = new DocModel
         {
             FileName = Path.GetFileName(file.FileName),
             ContentType = contentType,
@@ -93,13 +347,20 @@ public class DocumentService : IDocumentService
         List<Models.SensitiveItem>? detected = null;
         try
         {
-            if (contentType == "application/pdf")
+            if (contentType == "text/plain")
             {
-                using var fs = new FileStream(destPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                detected = _scanner.ScanPdfStream(fs);
+                var text = await File.ReadAllTextAsync(destPath);
+                detected = _scanner.ScanText(text);
             }
-            else if (contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            else if (contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
             {
+                var text = ExtractTextFromDocxAsync(destPath);
+                detected = _scanner.ScanText(text);
+            }
+            else if (contentType == "application/msword")
+            {
+                // Legacy .doc format - skip scanning for now
+                _logger?.LogInformation("Skipping scanning for legacy .doc format: {File}", destPath);
             }
         }
         catch (Exception ex)
@@ -157,7 +418,6 @@ public class DocumentService : IDocumentService
 {
     var doc = await _db.Documents.FindAsync(id);
     if (doc is null) return null;
-    if (!string.Equals(doc.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase)) return null;
 
     var fullPath = Directory.GetFiles(_storageRoot, $"{id}_*").FirstOrDefault();
     if (fullPath is null) return null;
@@ -173,17 +433,10 @@ public class DocumentService : IDocumentService
 
     try
     {
-        using var input = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        using var pdf = UglyToad.PdfPig.PdfDocument.Open(input);
-
-        var output = new PdfSharpCore.Pdf.PdfDocument();
-        var font = new XFont("Consolas", 10, XFontStyle.Regular); 
-
-        for (int i = 0; i < pdf.NumberOfPages; i++)
+        // Handle text files
+        if (doc.ContentType == "text/plain")
         {
-            var page = pdf.GetPage(i + 1);
-            var text = page.Text ?? string.Empty;
-
+            var text = await File.ReadAllTextAsync(fullPath);
             foreach (var token in tokens)
             {
                 if (string.IsNullOrWhiteSpace(token)) continue;
@@ -195,30 +448,33 @@ public class DocumentService : IDocumentService
                     System.Text.RegularExpressions.RegexOptions.IgnoreCase
                 );
             }
-
-            text = text.Replace("\r", "");
-            text = text.Replace("\t", " ");
-            text = System.Text.RegularExpressions.Regex.Replace(text, " {2,}", " ");
-
-            var newPage = output.AddPage();
-            var gfx = XGraphics.FromPdfPage(newPage);
-            var tf = new XTextFormatter(gfx);
-            tf.Alignment = XParagraphAlignment.Left;
-            var rect = new XRect(40, 40, newPage.Width - 80, newPage.Height - 80);
-
-            tf.DrawString(text, font, XBrushes.Black, rect);
-            gfx.Dispose();
+            
+            var ms = new MemoryStream();
+            var writer = new StreamWriter(ms, System.Text.Encoding.UTF8);
+            await writer.WriteAsync(text);
+            await writer.FlushAsync();
+            ms.Position = 0;
+            var outName = Path.GetFileNameWithoutExtension(doc.FileName) + "-redacted.txt";
+            return (ms, outName);
+        }
+        
+        // Handle .docx files
+        if (doc.ContentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        {
+            return await RedactDocxAsync(fullPath, tokens, doc.FileName);
+        }
+        
+        // Legacy .doc files not supported for redaction
+        if (doc.ContentType == "application/msword")
+        {
+            return null;
         }
 
-        var ms = new MemoryStream();
-        output.Save(ms, false);
-        ms.Position = 0;
-    var outName = Path.GetFileNameWithoutExtension(doc.FileName) + "-redacted.pdf";
-        return (ms, outName);
+        return null;
     }
     catch (Exception ex)
     {
-        _logger?.LogError(ex, "Text redaction rewrite failed for id={Id}", id);
+        _logger?.LogError(ex, "Redaction failed for id={Id}", id);
         return null;
     }
 }
@@ -233,16 +489,26 @@ public class DocumentService : IDocumentService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Overlay redaction failed for id={Id}", id);
+            _logger?.LogError(ex, "Redaction failed for id={Id}", id);
             return new Models.UploadResult(false, "Redaction failed", null, null);
         }
-        if (red is null) return new Models.UploadResult(false, "Redaction failed or not a PDF", null, null);
+        if (red is null) return new Models.UploadResult(false, "Redaction failed or unsupported format", null, null);
 
         var (stream, fileName) = red.Value;
-        var newDoc = new Models.Document
+        
+        // Determine content type from file extension
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        var contentType = ext switch
+        {
+            ".txt" => "text/plain",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            _ => "application/octet-stream"
+        };
+        
+        var newDoc = new DocModel
         {
             FileName = fileName,
-            ContentType = "application/pdf",
+            ContentType = contentType,
             SizeBytes = stream.Length,
             UploadedAt = DateTime.UtcNow
         };
@@ -262,8 +528,16 @@ public class DocumentService : IDocumentService
         List<Models.SensitiveItem>? detected = null;
         try
         {
-            using var fsr = new FileStream(destPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            detected = _scanner.ScanPdfStream(fsr);
+            if (contentType == "text/plain")
+            {
+                var text = await File.ReadAllTextAsync(destPath);
+                detected = _scanner.ScanText(text);
+            }
+            else if (contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            {
+                var text = ExtractTextFromDocxAsync(destPath);
+                detected = _scanner.ScanText(text);
+            }
         }
         catch (Exception ex)
         {

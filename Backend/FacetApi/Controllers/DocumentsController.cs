@@ -41,6 +41,15 @@ public class DocumentsController : ControllerBase
         return new FileStreamResult(res.Value.Stream, res.Value.ContentType);
     }
 
+    [HttpGet("{id:guid}/preview")]
+    public async Task<IActionResult> Preview(Guid id)
+    {
+        var res = await _svc.GetPreviewAsync(id);
+        if (res is null) return NotFound();
+
+        return Content(res, "text/html");
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
