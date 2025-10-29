@@ -87,7 +87,7 @@ function applyAndBack() {
           class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50"
           :disabled="itemsForType.length === 0"
         >
-          Apply selection
+          Confirm Selection
         </button>
         <NuxtLink to="/" class="px-4 py-2 bg-transparent hover:bg-slate-50 text-slate-700 rounded-lg">Back</NuxtLink>
       </div>
