@@ -49,11 +49,7 @@ const activeOptions = computed(() => {
     .filter(k => viewedPolicy.value?.options[k])
 })
 
-watchEffect(() => {
-  if (route.query.notice === 'policy-created') {
-    notice.value = 'A new policy has been added to your list'
-  }
-})
+// Notice from route query 'policy-created' removed to avoid auto-showing a success message after creating a policy.
 
 async function refresh(selectNewId?: string) {
   docs.value = await get<Document[]>('api/documents')
@@ -143,14 +139,14 @@ async function usePolicy(id?: string) {
   }
 
   setAll(selectedId.value, values)
-  notice.value = `Applied policy "${policy.name}" — ${values.length} items selected`
 
   try {
     await applySelected()
   }
   catch (e) {
     console.error('UsePolicy applySelected failed', e)
-    notice.value = `Failed to apply policy \"${policy.name}\"`
+    // Keep failure visible to the user
+    alert(`Failed to apply policy "${policy.name}"`)
   }
 }
 
