@@ -2,13 +2,14 @@ using FacetApi.Data;
 using FacetApi.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-var dbPath = Path.Combine(builder.Environment.ContentRootPath, "facet.db");
-builder.Services.AddDbContext<FacetDbContext>(opt => opt.UseSqlite($"Data Source={dbPath}"));
+builder.Services.AddDbContext<FacetDbContext>(opt => 
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "FACET API", Version = "v1" }); });
