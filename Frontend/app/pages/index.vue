@@ -97,7 +97,9 @@ function selectPolicy(id: string) {
 onMounted(() => 
 {
   policies.value = JSON.parse(localStorage.getItem('policies') || '[]')
-    refresh()
+  // If we arrived with a docId in query (e.g., from Sensitive type page), select that document after refresh
+  const initialDocId = (route.query.docId as string) || undefined
+  refresh(initialDocId)
 })
 
 async function usePolicy(id?: string) {
@@ -138,6 +140,8 @@ async function usePolicy(id?: string) {
     return
   }
 
+  // Clear any previous selections for this document so policy application replaces them
+  clear(selectedId.value)
   setAll(selectedId.value, values)
 
   try {

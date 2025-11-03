@@ -45,7 +45,8 @@ onMounted(() => {
 })
 
 function applyAndBack() {
-  router.push('/')
+  // Return to main page and keep the current document selected by passing docId in query
+  router.push({ path: '/', query: { docId: docId.value } })
 }
 </script>
 
