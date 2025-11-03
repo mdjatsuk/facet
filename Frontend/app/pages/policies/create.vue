@@ -87,7 +87,7 @@ async function submit() {
             <input type="checkbox" v-model="options.removeNationalIds" class="accent-blue-500 h-4 w-4 mt-1" />
             <div>
               <div class="font-medium">National ID numbers</div>
-              <div class="text-sm muted">e.g., SSN, passport numbers, driver’s license numbers</div>
+              <div class="text-sm muted">e.g., personal identification numbers</div>
             </div>
           </label>
 
@@ -122,7 +122,7 @@ async function submit() {
             <input type="checkbox" v-model="options.removeFinancialInfo" class="accent-blue-500 h-4 w-4 mt-1" />
             <div>
               <div class="font-medium">Financial information</div>
-              <div class="text-sm muted">e.g., credit card numbers, bank account numbers</div>
+              <div class="text-sm muted">e.g., IBAN</div>
             </div>
           </label>
 
