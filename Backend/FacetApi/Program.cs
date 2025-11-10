@@ -8,8 +8,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-builder.Services.AddDbContext<FacetDbContext>(opt => 
-    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<FacetDbContext>(opt =>
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+    
+builder.Services.AddCors(o => o.AddPolicy("MyPolicy", builder =>
+{
+    builder
+    .SetIsOriginAllowed(_ => true)
+    .AllowCredentials()
+    .AllowAnyMethod()
+    .AllowAnyHeader();
+}));
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "FACET API", Version = "v1" }); });
