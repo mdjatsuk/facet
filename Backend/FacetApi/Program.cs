@@ -22,13 +22,13 @@ builder.Services.AddSingleton<ISensitiveDataScanner, SensitiveDataScanner>();
 
 var app = builder.Build();
 
-app.UseCors();
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("MyPolicy");
 
 app.UseStaticFiles();
 app.MapControllers();
