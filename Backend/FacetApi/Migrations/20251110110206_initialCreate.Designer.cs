@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FacetApi.Migrations
 {
     [DbContext(typeof(FacetDbContext))]
-    [Migration("20251110101806_Initial")]
-    partial class Initial
+    [Migration("20251110110206_initialCreate")]
+    partial class initialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
