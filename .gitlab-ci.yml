@@ -28,8 +28,8 @@ build:back-end:
     - master
     - main
   script:
-  - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} ./Backend/
-  - docker push ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
+    - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} ./Backend/FacetApi/
+    - docker push ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
   stage: build
 
 build:front-end:
