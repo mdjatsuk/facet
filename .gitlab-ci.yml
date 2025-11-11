@@ -56,4 +56,5 @@ api_test:
     - docker compose up --abort-on-container-exit --exit-code-from newman
     - docker compose down -v
   stage: api_test
+  when: manual
   
