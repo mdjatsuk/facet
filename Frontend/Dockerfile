@@ -1,4 +1,4 @@
-FROM node:24.11-alpine3.21 AS builder
+FROM public.ecr.aws/docker/library/node:24.11-alpine3.21 AS builder
 RUN npm install -g pnpm
 
 WORKDIR /app
