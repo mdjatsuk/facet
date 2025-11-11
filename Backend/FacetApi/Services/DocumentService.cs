@@ -317,7 +317,7 @@ public class DocumentService : IDocumentService
 
         var ext = Path.GetExtension(file.FileName);
         if (!AllowedExtensions.Contains(ext))
-            return new UploadResult(false, "Pole toetatud failitüüp. Lubatud: DOC, DOCX, TXT.", null);
+            return new UploadResult(false, "Pole toetatud failitüüp. Lubatud: DOC, DOCX, TXT", null);
 
         var contentType = !string.IsNullOrWhiteSpace(file.ContentType) ? file.ContentType : ext switch
         {
