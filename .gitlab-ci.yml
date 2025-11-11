@@ -2,7 +2,7 @@ variables:
   DOCKER_DRIVER: overlay2
   # Minu konteineri registri aadress AWS-s (Amazon Elastic Container Registry)
   # Asenda MINU_REGISTRI_NIMI
-  DOCKER_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/facet
+  DOCKER_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/workout
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
 
@@ -29,7 +29,7 @@ build:back-end:
     - master
     - main
   script:
-    - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} ./Backend/FacetApi/
+    - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} ./BackEnd/FacetApi
     - docker push ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
   stage: build
 
@@ -38,23 +38,22 @@ build:front-end:
     - master
     - main
   script:
-    - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} ./Frontend/
+    - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} ./FrontEnd/
     - docker push ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA}
   stage: build
 
 api_test:
-image:
-  name: docker:28.5.1-alpine3.22
-  entrypoint: ["/bin/sh", "-c"]
-services:
-  - docker:28.5.1-alpine3.22
-only:
-  - master
-  - main
-script:
-  - cd ApiTests
-  - docker compose up --abort-on-container-exit --exit-code-from newman
-  - docker compose down -v
-stage: api_test
-
+  image:
+    name: docker:28.5.1-alpine3.22
+    entrypoint: ["/bin/sh", "-c"]
+  services:
+    - docker:28.5.1-alpine3.22
+  only:
+    - master
+    - main
+  script:
+    - cd ApiTests
+    - docker compose up --abort-on-container-exit --exit-code-from newman
+    - docker compose down -v
+  stage: api_test
   
