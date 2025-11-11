@@ -46,6 +46,7 @@ services:
     volumes:
       - ./startup:/etc/startup
       - ./newman/:/etc/newman/
+      - ./test-files/:/etc/newman/test-files/
     command: run /etc/newman/facet.postman_collection.json -e facet.postman_environment.json
 networks:
   pg_net:
