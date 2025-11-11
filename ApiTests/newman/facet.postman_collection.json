@@ -20,9 +20,10 @@
 							"",
 							"pm.test(\"Upload succeeded and returned document info\", function () {",
 							"    const data = pm.response.json();",
-							"    pm.expect(data).to.have.property('Success', true);",
-							"    pm.expect(data.Document).to.be.an('object');",
-							"    pm.expect(data.Document.SizeBytes).to.be.a('number').that.is.above(0);",
+							"    // ASP.NET Core serializes properties to camelCase by default, so check 'success'",
+							"    pm.expect(data).to.have.property('success', true);",
+							"    pm.expect(data.document).to.be.an('object');",
+							"    pm.expect(data.document.sizeBytes).to.be.a('number').that.is.above(0);",
 							"});"
 						],
 						"type": "text/javascript",
