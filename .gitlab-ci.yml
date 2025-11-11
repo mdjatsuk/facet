@@ -7,7 +7,7 @@ variables:
   DOCKER_HOST: tcp://docker:2375
 
 stages:
-  #- build
+  - build
   - api_test
 
 default:
@@ -24,23 +24,23 @@ default:
   tags:
     - itb2203
 
-# build:back-end:
-#   only:
-#     - master
-#     - main
-#   script:
-#     - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} ./Backend/FacetApi/
-#     - docker push ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
-#   stage: build
+build:back-end:
+  only:
+    - master
+    - main
+  script:
+    - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} ./Backend/FacetApi/
+    - docker push ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
+  stage: build
 
-# build:front-end:
-#   only:
-#     - master
-#     - main
-#   script:
-#     - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} ./Frontend/
-#     - docker push ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA}
-#   stage: build
+build:front-end:
+  only:
+    - master
+    - main
+  script:
+    - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} ./Frontend/
+    - docker push ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA}
+  stage: build
 
 api_test:
   image:
