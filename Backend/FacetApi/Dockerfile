@@ -19,6 +19,8 @@ RUN dotnet publish "FacetApi.csproj" -c Release -o /publish
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.22
 WORKDIR /app
 COPY --from=builder /publish .
+RUN mkdir -p ./storage \
+    && chmod 777 ./storage
 
 EXPOSE 80
 

@@ -2,17 +2,19 @@ services:
   postgres:
     image: postgres:18-alpine
     container_name: api_db
-    ports:
-      - "5433:5432"
     environment:
       - POSTGRES_PASSWORD=postgres
+      - PGPORT=5433
+    ports:
+      - "5433:5433"
     networks:
       - pg_net
   back_end:
     image: ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
+    #build: ../Backend/FacetApi
     container_name: back_end
     environment:
-      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_URLS=http://+:5000
     depends_on:
       - postgres
     networks:
@@ -35,7 +37,7 @@ services:
   newman:
     image: postman/newman:alpine
     entrypoint:
-      ["/etc/startup/wait-for", "-t", "30", "back_end:8080", "--", "newman"]
+      ["/etc/startup/wait-for", "-t", "30", "back_end:5000", "--", "newman"]
     container_name: newman
     depends_on:
       - postgres
