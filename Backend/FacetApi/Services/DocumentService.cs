@@ -368,7 +368,7 @@ public class DocumentService : IDocumentService
             _logger?.LogWarning(ex, "Sensitive data scanning failed for file {File}", destPath);
         }
 
-        return new UploadResult(true, "Fail on edukalt üles laetud", doc, detected);
+        return new UploadResult(true, "Fail on edukalt üles laetud!", doc, detected);
     }
 
     public async Task<bool> DeleteAsync(Guid id)
