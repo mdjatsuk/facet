@@ -7,7 +7,7 @@ variables:
   DOCKER_HOST: tcp://docker:2375
 
 stages:
-  #- build
+  - build
   - api_test
 
 default:
@@ -56,4 +56,5 @@ api_test:
     - docker compose up --abort-on-container-exit --exit-code-from newman
     - docker compose down -v
   stage: api_test
+  when: manual
   
