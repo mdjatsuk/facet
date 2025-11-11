@@ -33,12 +33,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:5000/api/documents",
-					"protocol": "http",
+					"raw": "{{url}}/api/documents",
 					"host": [
-						"localhost"
+						"{{url}}"
 					],
-					"port": "5000",
 					"path": [
 						"api",
 						"documents"
