@@ -39,7 +39,8 @@
 					"formdata": [
 						{
 							"key": "file",
-							"type": "file"
+							"type": "file",
+							"src": "{{uploadFilePath}}"
 						}
 					]
 				},
