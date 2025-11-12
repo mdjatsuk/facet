@@ -329,6 +329,7 @@ public class DocumentService : IDocumentService
         if (!AllowedContentTypes.Contains(contentType))
             return new UploadResult(false, "Pole toetatud failitüüp. Lubatud: DOC, DOCX, TXT.", null);
 
+        // Save original file (no auto-redaction; redaction happens only on Apply Changes)
         var doc = new DocModel
         {
             FileName = Path.GetFileName(file.FileName),
@@ -359,7 +360,6 @@ public class DocumentService : IDocumentService
             }
             else if (contentType == "application/msword")
             {
-                // Legacy .doc format - skip scanning for now
                 _logger?.LogInformation("Skipping scanning for legacy .doc format: {File}", destPath);
             }
         }
@@ -368,7 +368,7 @@ public class DocumentService : IDocumentService
             _logger?.LogWarning(ex, "Sensitive data scanning failed for file {File}", destPath);
         }
 
-        return new UploadResult(true, "Fail on edukalt üles laetud!", doc, detected);
+        return new UploadResult(true, "Fail on edukalt üles laetud", doc, detected);
     }
 
     public async Task<bool> DeleteAsync(Guid id)
@@ -547,6 +547,32 @@ public class DocumentService : IDocumentService
         if (detected != null && detected.Count > 0)
         {
             _logger?.LogWarning("Redacted copy still contains {Count} sensitive items; leaving redacted copy in place for file {File}", detected.Count, destPath);
+        }
+
+        // Delete the original document (security: do not store original uploads)
+        try
+        {
+            var originalDoc = await _db.Documents.FindAsync(id);
+            if (originalDoc != null)
+            {
+                // Delete physical file from storage
+                var originalPath = Path.Combine(_storageRoot, $"{originalDoc.Id}_{originalDoc.FileName}");
+                if (File.Exists(originalPath))
+                {
+                    File.Delete(originalPath);
+                    _logger?.LogInformation("Deleted original document file: {Path}", originalPath);
+                }
+
+                // Delete from database
+                _db.Documents.Remove(originalDoc);
+                await _db.SaveChangesAsync();
+                _logger?.LogInformation("Deleted original document record from database: Id={Id}", id);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to delete original document after redaction: Id={Id}", id);
+            // Don't fail the redaction operation if deletion fails; redacted copy is safely stored
         }
 
         return new Models.UploadResult(true, "Redacted copy created", newDoc, detected);

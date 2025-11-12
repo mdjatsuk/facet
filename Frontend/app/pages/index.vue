@@ -75,6 +75,8 @@ async function onDelete(id: string) {
 function onUploaded(payload: { document: Document, detected?: SensitiveItem[] }) {
   console.log('Upload response payload:', payload)
   console.log('Detected items:', payload.detected)
+  // Clear any previous selections for the new document to ensure preview shows original content
+  clear(payload.document.id)
   setDetected(payload.document.id, payload.detected || [])  
   refresh(payload.document.id)
   selectedId.value = payload.document.id
