@@ -9,15 +9,14 @@ public class SensitiveDataScanner : ISensitiveDataScanner
     private readonly ILogger<SensitiveDataScanner> _logger;
 
     private static readonly Regex EmailRe = new(
-    pattern:
-    @"(?<![A-Za-z0-9._%])" +                          // not in the middle of a word
-    @"[A-Za-z0-9](?:[A-Za-z0-9._%+-]*[A-Za-z0-9])?" + // local part
-    "@" +
-    @"[A-Za-z0-9.-]+\.[A-Za-z]{2,24}" +               // domain + TLD
-    @"(?=$|[^A-Za-z])",                               
-    options: RegexOptions.Compiled | RegexOptions.CultureInvariant,
-    matchTimeout: TimeSpan.FromMilliseconds(250));
-
+        pattern:
+        @"(?<![A-Za-z0-9._%])" +                             
+        @"[A-Za-z0-9](?:[A-Za-z0-9._%+-]*[A-Za-z0-9])?" +    
+        @"@" +
+        @"[A-Za-z0-9.-]+\.[A-Za-z]{2,24}" +                  
+        @"(?=$|[^A-Za-z]|[A-Z])",                            
+        options: RegexOptions.Compiled | RegexOptions.CultureInvariant,
+        matchTimeout: TimeSpan.FromMilliseconds(250));
 
     private static readonly Regex PhoneRe = new(
         pattern:
