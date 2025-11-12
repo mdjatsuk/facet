@@ -1,4 +1,5 @@
 using FacetApi.Data;
+using FacetApi.Data.Repos;
 using FacetApi.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -29,6 +30,8 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
 
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddSingleton<ISensitiveDataScanner, SensitiveDataScanner>();
+builder.Services.AddScoped<UsersRepo>();
+
 
 var app = builder.Build();
 
