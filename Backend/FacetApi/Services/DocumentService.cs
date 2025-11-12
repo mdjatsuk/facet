@@ -335,7 +335,8 @@ public class DocumentService : IDocumentService
             FileName = Path.GetFileName(file.FileName),
             ContentType = contentType,
             SizeBytes = file.Length,
-            UploadedAt = DateTime.UtcNow
+            UploadedAt = DateTime.UtcNow,
+            IsTemporary = true
         };
         _db.Documents.Add(doc);
 
@@ -510,7 +511,8 @@ public class DocumentService : IDocumentService
             FileName = fileName,
             ContentType = contentType,
             SizeBytes = stream.Length,
-            UploadedAt = DateTime.UtcNow
+            UploadedAt = DateTime.UtcNow,
+            IsTemporary = false
         };
 
         _db.Documents.Add(newDoc);

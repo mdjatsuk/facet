@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import { onMounted, watch } from 'vue'
 import { useDetected } from '../composables/useDetected'
 import { useSelection } from '../composables/useSelection'
-import type { Document, SensitiveItem } from '../types'  
+import type { Document, SensitiveItem } from '../types'
 
 const { get, del, post } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
 
 const docs = ref<Document[]>([])
 const selectedId = ref<string | null>(null)
+// Staged upload: shown in preview until Apply Changes creates redacted copy
+const stagedDoc = ref<Document | null>(null)
 
 const { setDetected, getDetected, clearDetected } = useDetected()
 
@@ -17,17 +20,29 @@ const selectedPolicyId = ref<string | null>(null)
 const selectedDoc = computed(() => 
   docs.value.find(d => d.id === selectedId.value) || docs.value[0] || null
 )
-const previewUrl = computed(() => selectedDoc.value ? `${apiBase}api/documents/${selectedDoc.value.id}/file` : '')
-const previewType = computed(() => selectedDoc.value?.contentType || '')
+const previewUrl = computed(() => {
+  const doc = stagedDoc.value || selectedDoc.value
+  return doc ? `${apiBase}api/documents/${doc.id}/file` : ''
+})
+const previewType = computed(() => {
+  const doc = stagedDoc.value || selectedDoc.value
+  return doc?.contentType || ''
+})
 
-const currentDetected = computed(() => getDetected(selectedId.value || '') || [])
+const currentDetected = computed(() => {
+  const docId = stagedDoc.value?.id || selectedId.value || ''
+  return getDetected(docId) || []
+})
 const uniqueTypes = computed(() => [...new Set(currentDetected.value.map(d => d.type))])
 
 const route = useRoute()
 const notice = ref<string | null>(null)
 
 const { getValues, clear, setAll } = useSelection()
-const selectedCount = computed(() => (getValues(selectedId.value || '') || []).length)
+const selectedCount = computed(() => {
+  const docId = stagedDoc.value?.id || selectedId.value || ''
+  return (getValues(docId) || []).length
+})
 
 const viewedPolicy = ref<{ id: string, name: string, options: Record<string, boolean> } | null>(null)
 
@@ -75,16 +90,39 @@ async function onDelete(id: string) {
 function onUploaded(payload: { document: Document, detected?: SensitiveItem[] }) {
   console.log('Upload response payload:', payload)
   console.log('Detected items:', payload.detected)
+  // Stage the uploaded document (shown in preview but not in list)
+  stagedDoc.value = payload.document
   // Clear any previous selections for the new document to ensure preview shows original content
   clear(payload.document.id)
   setDetected(payload.document.id, payload.detected || [])  
-  refresh(payload.document.id)
-  selectedId.value = payload.document.id
   console.log('Detected for doc:', payload.document.id, payload.detected)
 }
 
 watch(selectedId, () => {
   console.log('Selected doc changed to:', selectedId.value)
+})
+
+// Persist stagedDoc to localStorage
+watch(stagedDoc, (newVal) => {
+  if (newVal) {
+    localStorage.setItem('stagedDoc', JSON.stringify(newVal))
+  } else {
+    localStorage.removeItem('stagedDoc')
+  }
+}, { deep: true })
+
+// Restore stagedDoc from localStorage on mount
+onMounted(() => {
+  const saved = localStorage.getItem('stagedDoc')
+  if (saved) {
+    try {
+      stagedDoc.value = JSON.parse(saved)
+      console.log('Restored staged doc from localStorage:', stagedDoc.value)
+    } catch (e) {
+      console.error('Failed to restore staged doc', e)
+      localStorage.removeItem('stagedDoc')
+    }
+  }
 })
 
 function deletePolicy(id: string) {
@@ -157,12 +195,14 @@ async function usePolicy(id?: string) {
 }
 
 async function applySelected() {
-  if (!selectedId.value) return
-  const vals = getValues(selectedId.value)
-  console.log('ApplySelected called for', selectedId.value, 'values:', vals)
+  // Prefer staged doc if present, otherwise use selected doc
+  const targetId = stagedDoc.value?.id ?? selectedId.value
+  if (!targetId) return
+  const vals = getValues(targetId)
+  console.log('ApplySelected called for', targetId, 'values:', vals)
   if (!vals || vals.length === 0) { alert('No selections for the selected document'); return }
   try {
-    const res = await post<any>(`/api/documents/${selectedId.value}/redact/save`, { values: vals })
+    const res = await post<any>(`/api/documents/${targetId}/redact/save`, { values: vals })
     console.log('Redacted copy created', res)
     const docId = res?.document?.id || res?.Document?.id
     if (docId) await refresh(docId)
@@ -173,8 +213,31 @@ async function applySelected() {
     alert('Failed to create redacted copy')
     return
   }
-  await refresh()
-  clear(selectedId.value)
+  // Clear staged state if we were working with a staged document
+  if (stagedDoc.value?.id === targetId) {
+    stagedDoc.value = null
+    clearDetected(targetId)
+    clear(targetId)
+  } else {
+    // Otherwise clear the selected document
+    clear(selectedId.value)
+  }
+}
+
+async function discardStaged() {
+  if (!stagedDoc.value?.id) return
+  const docId = stagedDoc.value.id
+  try {
+    await del(`/api/documents/${docId}`)
+    console.log('Staged document discarded')
+    stagedDoc.value = null
+    clearDetected(docId)
+    clear(docId)
+  }
+  catch (e) {
+    console.error('Failed to discard staged document', e)
+    alert('Failed to discard staged document')
+  }
 }
 
 </script>
@@ -210,9 +273,9 @@ async function applySelected() {
     <main class="max-w-7xl mx-auto px-6 py-8 grid gap-6 md:grid-cols-5">
       <section class="space-y-4 md:col-span-1">
           <UploadDrop @uploaded="onUploaded" />
-          <SensitiveDataBox :types="uniqueTypes" :doc-id="selectedId" />
+          <SensitiveDataBox :types="uniqueTypes" :doc-id="stagedDoc?.id || selectedId" />
           <div class="mt-2 flex gap-2 items-center">
-            <button @click="applySelected" class="px-3 py-2 bg-blue-600 text-white rounded" :disabled="!selectedId || selectedCount === 0">
+            <button @click="applySelected" class="px-3 py-2 bg-blue-600 text-white rounded" :disabled="!(stagedDoc?.id || selectedId) || selectedCount === 0">
               Apply Changes
             </button>
             <div class="text-sm text-slate-600">Selected: {{ selectedCount }}</div>
@@ -220,7 +283,21 @@ async function applySelected() {
       </section>
 
       <section class="md:col-span-3">
-        <PreviewPane v-if="selectedDoc" :url="previewUrl" :contentType="previewType" :documentId="selectedDoc.id" />
+        <div v-if="stagedDoc" class="mb-3 p-4 bg-white border border-slate-200 rounded-lg shadow-sm">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="text-sm font-medium text-slate-900">{{ stagedDoc.fileName }}</div>
+              <div class="text-xs text-slate-500 mt-1">
+                Uploaded: {{ new Date(stagedDoc.uploadedAt).toLocaleString() }} • Size: {{ (stagedDoc.sizeBytes / 1024).toFixed(2) }} KB
+              </div>
+            </div>
+            <button @click="discardStaged" class="px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 transition">
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <PreviewPane v-if="stagedDoc || selectedDoc" :url="previewUrl" :contentType="previewType" :documentId="(stagedDoc || selectedDoc)?.id" />
         <div v-else class="card p-6 w-full aspect-[210/297] max-h-[80vh] flex items-center justify-center muted">Nothing to display</div>
       </section>
 
