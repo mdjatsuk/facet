@@ -153,7 +153,8 @@ async function usePolicy(id?: string) {
     notice.value = 'Policy not found'
     return
   }
-  if (!selectedId.value) {
+  const targetDocId = stagedDoc.value?.id ?? selectedId.value
+  if (!targetDocId) {
     notice.value = 'No document selected'
     return
   }
@@ -181,8 +182,8 @@ async function usePolicy(id?: string) {
   }
 
   // Clear any previous selections for this document so policy application replaces them
-  clear(selectedId.value)
-  setAll(selectedId.value, values)
+  clear(targetDocId)
+  setAll(targetDocId, values)
 
   try {
     await applySelected()
