@@ -50,6 +50,35 @@ namespace FacetApi.Migrations
 
                     b.ToTable("Documents", (string)null);
                 });
+
+            modelBuilder.Entity("FacetApi.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Password = "testpass",
+                            Username = "testuser"
+                        });
+                });
 #pragma warning restore 612, 618
         }
     }
