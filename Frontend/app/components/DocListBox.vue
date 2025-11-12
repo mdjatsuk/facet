@@ -15,13 +15,13 @@ function cls(id: string) {
 <template>
   <div class="listbox">
     <div class="listbox-header">
-      <div class="font-semibold">Uploaded Documents</div>
+      <div class="font-semibold">Redacted Documents</div>
       <div class="muted">{{ docs.length }}</div>
     </div>
 
     <div class="listbox-body max-h-64 overflow-auto">
     <div v-if="docs.length === 0" class="text-gray-500 p-4 text-center">
-             No documents uploaded.
+             No redacted documents yet.
     </div>
 
       <div v-for="d in docs" :key="d.id" :class="cls(d.id)" @click="$emit('select', d.id)">

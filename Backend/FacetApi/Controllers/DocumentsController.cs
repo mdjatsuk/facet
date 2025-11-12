@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FacetApi.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class DocumentsController : ControllerBase
@@ -14,7 +13,7 @@ public class DocumentsController : ControllerBase
     public DocumentsController(IDocumentService svc) => _svc = svc;
 
     [HttpGet]
-    public async Task<IActionResult> List() => Ok(await _svc.Query().ToListAsync());
+    public async Task<IActionResult> List() => Ok(await _svc.Query().Where(d => !d.IsTemporary).ToListAsync());
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id)
