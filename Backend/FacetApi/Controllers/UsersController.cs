@@ -19,12 +19,17 @@ namespace FacetApi.Controllers
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] User login)
         {
-            if (login == null)
-                return BadRequest("Login payload is required.");
+            var token = await _repo.Login(login);
 
-            var isLoginSuccessful = await _repo.Login(login);
-
-            return isLoginSuccessful ? Ok() : Unauthorized();
+            if (!string.IsNullOrEmpty(token))
+            {
+                return Ok(token);
+            }
+            else
+            {
+                return Unauthorized();
+            }
         }
+
     }
 }
