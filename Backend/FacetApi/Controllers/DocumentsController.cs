@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace FacetApi.Controllers;
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class DocumentsController : ControllerBase
@@ -12,20 +12,39 @@ public class DocumentsController : ControllerBase
     private readonly IDocumentService _svc;
     public DocumentsController(IDocumentService svc) => _svc = svc;
 
+    private int? GetCurrentUserId()
+    {
+        var idClaim = HttpContext.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(idClaim, out var id)) return id;
+        return null;
+    }
+
     [HttpGet]
-    public async Task<IActionResult> List() => Ok(await _svc.Query().Where(d => !d.IsTemporary).ToListAsync());
+    public async Task<IActionResult> List()
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
+        var docs = await _svc.Query().Where(d => !d.IsTemporary && d.OwnerId == userId).ToListAsync();
+        return Ok(docs);
+    }
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id)
     {
         var doc = await _svc.GetAsync(id);
-        return doc is null ? NotFound() : Ok(doc);
+        var userId = GetCurrentUserId();
+        if (doc is null) return NotFound();
+        if (userId is null || doc.OwnerId != userId) return NotFound();
+        return Ok(doc);
     }
 
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] IFormFile file)
     {
-        var result = await _svc.UploadAsync(file);
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _svc.UploadAsync(file, userId);
         if (!result.Success) return BadRequest(result.Message);
         return Ok(result);
     }
@@ -33,6 +52,11 @@ public class DocumentsController : ControllerBase
     [HttpGet("{id:guid}/file")]
     public IActionResult File(Guid id)
     {
+        var doc = _svc.GetAsync(id).GetAwaiter().GetResult();
+        var userId = GetCurrentUserId();
+        if (doc is null) return NotFound();
+        if (userId is null || doc.OwnerId != userId) return NotFound();
+
         var res = _svc.GetFile(id);
         if (res is null) return NotFound();
 
@@ -45,6 +69,11 @@ public class DocumentsController : ControllerBase
     [HttpGet("{id:guid}/preview")]
     public async Task<IActionResult> Preview(Guid id)
     {
+        var doc = await _svc.GetAsync(id);
+        var userId = GetCurrentUserId();
+        if (doc is null) return NotFound();
+        if (userId is null || doc.OwnerId != userId) return NotFound();
+
         var res = await _svc.GetPreviewAsync(id);
         if (res is null) return NotFound();
 
@@ -54,6 +83,11 @@ public class DocumentsController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
+        var doc = await _svc.GetAsync(id);
+        var userId = GetCurrentUserId();
+        if (doc is null) return NotFound();
+        if (userId is null || doc.OwnerId != userId) return NotFound();
+
         var ok = await _svc.DeleteAsync(id);
         if (!ok) return NotFound("Fail ei leitud.");
         return NoContent(); 
@@ -65,6 +99,11 @@ public class DocumentsController : ControllerBase
     public async Task<IActionResult> Redact(Guid id, [FromBody] RedactRequest req)
     {
         var values = req?.Values ?? new List<string>();
+        var doc = await _svc.GetAsync(id);
+        var userId = GetCurrentUserId();
+        if (doc is null) return NotFound();
+        if (userId is null || doc.OwnerId != userId) return NotFound();
+
         var res = await _svc.RedactPdfAsync(id, values);
         if (res is null) return NotFound();
 
@@ -79,6 +118,11 @@ public class DocumentsController : ControllerBase
     public async Task<IActionResult> RedactAndSave(Guid id, [FromBody] RedactRequest req)
     {
         var values = req?.Values ?? new List<string>();
+        var doc = await _svc.GetAsync(id);
+        var userId = GetCurrentUserId();
+        if (doc is null) return NotFound();
+        if (userId is null || doc.OwnerId != userId) return NotFound();
+
         var res = await _svc.CreateRedactedCopyAsync(id, values);
         if (!res.Success) return BadRequest(res.Message);
         return Ok(res);

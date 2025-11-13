@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useApi } from '../composables/useApi'
+import { useAuth } from '~/composables/useAuth'
 import type { UploadResult, Document, ApiError } from '~/types'
 
 const emit = defineEmits<{ (e: 'uploaded', payload: { document: Document, detected?: import('~/types').SensitiveItem[] }): void }>()
 
 const { upload } = useApi()
+const auth = useAuth()
 const dragOver = ref(false)
 const busy = ref(false)
 const toast = ref<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
@@ -38,9 +40,10 @@ async function doUpload(file: File) {
   if (file.size > MAX_UPLOAD_BYTES) return showToast('error', 'File is too large. Maximum 10 MB allowed.')
   busy.value = true
   try {
-    const res = await upload<UploadResult>('api/documents/upload', file)
+    const form = new FormData()
+    form.append('file', file)
+    const res = await auth.fetchWithToken<UploadResult>('api/documents/upload', { method: 'POST', body: form })
     if (res.success && res.document) {
-      showToast('success', 'File uploaded successfully')
       emit('uploaded', { document: res.document, detected: (res as any).detected })
     } else {
       showToast('error', res.message || 'Upload failed')

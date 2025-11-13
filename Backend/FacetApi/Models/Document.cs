@@ -13,4 +13,5 @@ public class Document
     public long SizeBytes { get; set; }
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
     public bool IsTemporary { get; set; } = true;
+    public int? OwnerId { get; set; }
 }
