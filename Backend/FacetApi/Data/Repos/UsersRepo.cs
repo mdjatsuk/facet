@@ -31,6 +31,12 @@ namespace FacetApi.Data.Repos
                 return "";
             }
 
+            // If user is banned, return a sentinel value so controller can return a 403 with message
+            if (dbUser.IsBanned)
+            {
+                return "__BANNED__";
+            }
+
             // Check if password matches (support both plaintext legacy and hashed passwords)
             bool passwordValid = false;
             string? hashedPassword = null;
@@ -127,10 +133,59 @@ namespace FacetApi.Data.Repos
 
             newUser.Password = hashed;
             newUser.Salt = salt;
+            // Ensure new users get the default role
+            if (string.IsNullOrWhiteSpace(newUser.Role))
+            {
+                newUser.Role = "User";
+            }
 
             _context.UserList!.Add(newUser);
             await _context.SaveChangesAsync();
             return (true, null);
+        }
+
+        public async Task<bool> SetUserRole(string username, string role)
+        {
+            if (_context.UserList == null) return false;
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(role)) return false;
+            // normalize role
+            role = role.Trim();
+            var user = await _context.UserList.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return false;
+            user.Role = role;
+            _context.UserList.Update(user);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> BanUser(string username, bool ban)
+        {
+            if (_context.UserList == null) return false;
+            if (string.IsNullOrWhiteSpace(username)) return false;
+            var user = await _context.UserList.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return false;
+            user.IsBanned = ban;
+            _context.UserList.Update(user);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteUser(string username)
+        {
+            if (_context.UserList == null) return false;
+            if (string.IsNullOrWhiteSpace(username)) return false;
+            var user = await _context.UserList.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return false;
+            _context.UserList.Remove(user);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<User?> GetByUsername(string username)
+        {
+            if (_context.UserList == null) return null;
+            if (string.IsNullOrWhiteSpace(username)) return null;
+            return await _context.UserList.FirstOrDefaultAsync(u => u.Username == username);
         }
 
         private string GenerateJSONWebToken(User user)
@@ -141,6 +196,8 @@ namespace FacetApi.Data.Repos
             {
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, user.Username)
+                ,
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, user.Role ?? "User")
             };
 
             var token = new JwtSecurityToken(

@@ -5,31 +5,28 @@
 namespace FacetApi.Migrations
 {
     /// <inheritdoc />
-    public partial class AddUserSalt : Migration
+    public partial class addAdminRole : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "Salt",
-                table: "Users",
-                type: "text",
-                nullable: true);
-
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "Id",
                 keyValue: 1,
-                column: "Salt",
-                value: null);
+                columns: new[] { "Password", "Role", "Username" },
+                values: new object[] { "admin1", "Admin", "admin" });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Salt",
-                table: "Users");
+            migrationBuilder.UpdateData(
+                table: "Users",
+                keyColumn: "Id",
+                keyValue: 1,
+                columns: new[] { "Password", "Role", "Username" },
+                values: new object[] { "testpass", "User", "testuser" });
         }
     }
 }

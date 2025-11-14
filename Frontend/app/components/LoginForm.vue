@@ -15,7 +15,7 @@
         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Submit</button>
       </div>
 
-      <div v-if="showError" class="text-sm text-red-600">Login failed — please check credentials.</div>
+        <div v-if="showError || authError" class="text-sm text-red-600">{{ authError || 'Login failed — please check credentials.' }}</div>
     </form>
   </div>
 </template>
@@ -29,10 +29,14 @@ const auth = useAuth();
 const user: User = { username: "", password: "" };
 
 let showError = ref(false);
+const authError = computed(() => (auth as any).authError?.value || '');
 
 const submit = async () => {
   const ok = await auth.logIn(user);
   showError.value = !ok;
+  // auth.authError is populated by the composable on banned/login errors
+  // ensure UI updates
+  // navigate away only if ok
   if (ok) {
     await navigateTo("/");
   }

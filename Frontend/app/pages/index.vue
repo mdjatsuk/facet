@@ -103,7 +103,7 @@ watch(selectedId, () => {
 })
 
 // Scope stagedDoc and policies in localStorage per-user so different accounts don't see each other's data
-const { currentUsername, isAuthenticated, logOut } = useAuth()
+const { currentUsername, isAuthenticated, logOut, currentRole } = useAuth()
 const userInitials = computed(() => {
   const name = currentUsername.value || ''
   if (!name) return ''
@@ -277,6 +277,19 @@ async function discardStaged() {
           <span class="text-3xl text-slate-800 tracking-wide font-light">FACET</span>
         </div>
         <div class="flex items-center gap-3">
+          <!-- Admin-only: Set Roles button placed before Create new policy -->
+          <ClientOnly>
+            <template #default>
+              <NuxtLink
+                v-if="currentRole === 'Admin'"
+                to="/admin"
+                class="px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg transition-colors text-sm font-medium"
+              >
+                Manage users
+              </NuxtLink>
+            </template>
+          </ClientOnly>
+
           <NuxtLink to="/policies/create" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors text-sm font-medium">
             Create new policy
           </NuxtLink>

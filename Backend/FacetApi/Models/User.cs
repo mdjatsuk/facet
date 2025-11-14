@@ -11,6 +11,9 @@ namespace FacetApi.Models
         public string Username { get; set; } = "";
         public string Password { get; set; } = "";
         public string? Salt { get; set; }
+        public string Role { get; set; } = "User";
+        // When true the user is not allowed to authenticate or perform actions
+        public bool IsBanned { get; set; } = false;
 
     }
 

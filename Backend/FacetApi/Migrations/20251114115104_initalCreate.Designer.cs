@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FacetApi.Migrations
 {
     [DbContext(typeof(FacetDbContext))]
-    [Migration("20251112184844_AddDocumentOwner")]
-    partial class AddDocumentOwner
+    [Migration("20251114115104_initalCreate")]
+    partial class initalCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -74,6 +74,10 @@ namespace FacetApi.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Salt")
                         .HasColumnType("text");
 
@@ -90,6 +94,7 @@ namespace FacetApi.Migrations
                         {
                             Id = 1,
                             Password = "testpass",
+                            Role = "User",
                             Username = "testuser"
                         });
                 });
