@@ -7,7 +7,7 @@ public interface IDocumentService
 {
     IQueryable<Document> Query();
     Task<Document?> GetAsync(Guid id);
-    Task<UploadResult> UploadAsync(IFormFile file);
+    Task<UploadResult> UploadAsync(IFormFile file, int? ownerId);
     (Stream Stream, string ContentType, string FileName)? GetFile(Guid id);
     Task<string?> GetPreviewAsync(Guid id);
 

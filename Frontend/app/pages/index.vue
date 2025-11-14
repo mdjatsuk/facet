@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, computed } from 'vue'
 import { useDetected } from '../composables/useDetected'
 import { useSelection } from '../composables/useSelection'
 import type { Document, SensitiveItem } from '../types'
@@ -102,32 +102,46 @@ watch(selectedId, () => {
   console.log('Selected doc changed to:', selectedId.value)
 })
 
+// Scope stagedDoc and policies in localStorage per-user so different accounts don't see each other's data
+const { currentUsername, isAuthenticated, logOut } = useAuth()
+const userInitials = computed(() => {
+  const name = currentUsername.value || ''
+  if (!name) return ''
+  // Take first letter(s) of first two words
+  const parts = name.trim().split(/\s+/)
+  const first = parts[0]?.[0] ?? ''
+  const second = parts[1]?.[0] ?? ''
+  return (first + second).toUpperCase()
+})
+const stagedDocKey = computed(() => `stagedDoc_${currentUsername.value ?? 'anon'}`)
+const policiesKey = computed(() => `policies_${currentUsername.value ?? 'anon'}`)
+
 // Persist stagedDoc to localStorage
 watch(stagedDoc, (newVal) => {
   if (newVal) {
-    localStorage.setItem('stagedDoc', JSON.stringify(newVal))
+    localStorage.setItem(stagedDocKey.value, JSON.stringify(newVal))
   } else {
-    localStorage.removeItem('stagedDoc')
+    localStorage.removeItem(stagedDocKey.value)
   }
 }, { deep: true })
 
 // Restore stagedDoc from localStorage on mount
 onMounted(() => {
-  const saved = localStorage.getItem('stagedDoc')
+  const saved = localStorage.getItem(stagedDocKey.value)
   if (saved) {
     try {
       stagedDoc.value = JSON.parse(saved)
       console.log('Restored staged doc from localStorage:', stagedDoc.value)
     } catch (e) {
       console.error('Failed to restore staged doc', e)
-      localStorage.removeItem('stagedDoc')
+      localStorage.removeItem(stagedDocKey.value)
     }
   }
 })
 
 function deletePolicy(id: string) {
   policies.value = policies.value.filter(p => p.id !== id)
-  localStorage.setItem('policies', JSON.stringify(policies.value))
+  localStorage.setItem(policiesKey.value, JSON.stringify(policies.value))
 }
 
 function selectPolicy(id: string) {
@@ -136,10 +150,22 @@ function selectPolicy(id: string) {
 
 onMounted(() => 
 {
-  policies.value = JSON.parse(localStorage.getItem('policies') || '[]')
-  // If we arrived with a docId in query (e.g., from Sensitive type page), select that document after refresh
+  try {
+    policies.value = JSON.parse(localStorage.getItem(policiesKey.value) || '[]')
+  } catch (e) {
+    policies.value = []
+  }
   const initialDocId = (route.query.docId as string) || undefined
   refresh(initialDocId)
+})
+
+// Reload policies when currentUsername changes (login/logout/switch accounts)
+watch(currentUsername, () => {
+  try {
+    policies.value = JSON.parse(localStorage.getItem(policiesKey.value) || '[]')
+  } catch (e) {
+    policies.value = []
+  }
 })
 
 async function usePolicy(id?: string) {
@@ -159,13 +185,11 @@ async function usePolicy(id?: string) {
     return
   }
 
-  // Map scanner types to policy option keys
   const typeToOptionKey: Record<string, string> = {
     email: 'deleteAllEmails',
     phone: 'removePhoneNumbers',
     id: 'removeNationalIds',
     iban: 'removeFinancialInfo',
-    // extend this mapping if you add more detected types or policy options
   }
 
   const values = currentDetected.value
@@ -181,7 +205,6 @@ async function usePolicy(id?: string) {
     return
   }
 
-  // Clear any previous selections for this document so policy application replaces them
   clear(targetDocId)
   setAll(targetDocId, values)
 
@@ -190,13 +213,11 @@ async function usePolicy(id?: string) {
   }
   catch (e) {
     console.error('UsePolicy applySelected failed', e)
-    // Keep failure visible to the user
     alert(`Failed to apply policy "${policy.name}"`)
   }
 }
 
 async function applySelected() {
-  // Prefer staged doc if present, otherwise use selected doc
   const targetId = stagedDoc.value?.id ?? selectedId.value
   if (!targetId) return
   const vals = getValues(targetId)
@@ -214,13 +235,13 @@ async function applySelected() {
     alert('Failed to create redacted copy')
     return
   }
-  // Clear staged state if we were working with a staged document
+
   if (stagedDoc.value?.id === targetId) {
     stagedDoc.value = null
     clearDetected(targetId)
     clear(targetId)
   } else {
-    // Otherwise clear the selected document
+
     clear(selectedId.value)
   }
 }
@@ -244,8 +265,10 @@ async function discardStaged() {
 </script>
 
 <template>
-  <div class="min-h-screen">
-    <header class="bg-white border-b border-slate-100 shadow-sm">
+  <!-- Render only on client to avoid server rendering protected page before auth is ready -->
+  <ClientOnly>
+    <div class="min-h-screen">
+      <header class="bg-white border-b border-slate-100 shadow-sm">
       <div class="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center shadow-lg">
@@ -257,9 +280,29 @@ async function discardStaged() {
           <NuxtLink to="/policies/create" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors text-sm font-medium">
             Create new policy
           </NuxtLink>
-          <button class="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg transition-colors text-sm font-medium">
-            Sign In
-          </button>
+            <!-- Stable container so server/client structure (classes) match to avoid hydration class mismatch -->
+            <div class="min-w-[220px] flex items-center justify-end">
+              <div class="flex items-center gap-3">
+                <!-- This container always has the same classes on server and client -->
+                <div class="flex items-center gap-2">
+                  <ClientOnly>
+                    <template #default>
+                      <div v-if="isAuthenticated" class="flex items-center gap-2">
+                        <div class="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center font-medium text-sm shadow">
+                          <span v-if="userInitials">{{ userInitials }}</span>
+                          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 18a8 8 0 1116 0H2z" clip-rule="evenodd" />
+                          </svg>
+                        </div>
+                        <div class="text-sm text-slate-700">{{ currentUsername || 'You' }}</div>
+                        <button @click="logOut" class="px-3 py-1 text-sm text-red-600 border border-red-100 rounded hover:bg-red-50">Logout</button>
+                      </div>
+                      <div v-else class="w-24" aria-hidden="true"></div>
+                    </template>
+                  </ClientOnly>
+                </div>
+              </div>
+            </div>
         </div>
       </div>
     </header>
@@ -324,5 +367,6 @@ async function discardStaged() {
     </main>
 
     <footer class="py-8 text-center muted">   FACET 2025 </footer>
-  </div>
+    </div>
+  </ClientOnly>
 </template>

@@ -3,6 +3,7 @@ using System;
 using FacetApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FacetApi.Migrations
 {
     [DbContext(typeof(FacetDbContext))]
-    partial class FacetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251112175310_AddUserSalt")]
+    partial class AddUserSalt
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -41,9 +44,6 @@ namespace FacetApi.Migrations
                     b.Property<bool>("IsTemporary")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("OwnerId")
-                        .HasColumnType("integer");
-
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint");
 
@@ -51,8 +51,6 @@ namespace FacetApi.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
 
                     b.HasIndex("UploadedAt");
 
@@ -89,14 +87,6 @@ namespace FacetApi.Migrations
                             Password = "testpass",
                             Username = "testuser"
                         });
-                });
-
-            modelBuilder.Entity("FacetApi.Models.Document", b =>
-                {
-                    b.HasOne("FacetApi.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.SetNull);
                 });
 #pragma warning restore 612, 618
         }

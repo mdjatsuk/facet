@@ -31,5 +31,22 @@ namespace FacetApi.Controllers
             }
         }
 
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] User user)
+        {
+            var (success, error) = await _repo.Register(user);
+            if (success)
+            {
+                return Ok();
+            }
+
+            if (error == "Username already exists")
+            {
+                return Conflict(new { message = error });
+            }
+
+            return BadRequest(new { message = error });
+        }
+
     }
 }
