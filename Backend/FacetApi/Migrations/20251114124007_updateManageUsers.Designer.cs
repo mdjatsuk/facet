@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FacetApi.Migrations
 {
     [DbContext(typeof(FacetDbContext))]
-    [Migration("20251112135017_AddIsTemporaryField")]
-    partial class AddIsTemporaryField
+    [Migration("20251114124007_updateManageUsers")]
+    partial class updateManageUsers
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -44,6 +44,9 @@ namespace FacetApi.Migrations
                     b.Property<bool>("IsTemporary")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("integer");
+
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint");
 
@@ -51,6 +54,8 @@ namespace FacetApi.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("UploadedAt");
 
@@ -65,8 +70,18 @@ namespace FacetApi.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsBanned")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Password")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Salt")
                         .HasColumnType("text");
 
                     b.Property<string>("Username")
@@ -81,9 +96,19 @@ namespace FacetApi.Migrations
                         new
                         {
                             Id = 1,
-                            Password = "testpass",
-                            Username = "testuser"
+                            IsBanned = false,
+                            Password = "admin1",
+                            Role = "Admin",
+                            Username = "admin"
                         });
+                });
+
+            modelBuilder.Entity("FacetApi.Models.Document", b =>
+                {
+                    b.HasOne("FacetApi.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 #pragma warning restore 612, 618
         }

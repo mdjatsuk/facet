@@ -24,8 +24,9 @@ public class FacetDbContext : DbContext
         modelBuilder.Entity<User>().HasData(new User
         {
             Id = 1,
-            Username = "testuser",
-            Password = "testpass"
+            Username = "admin",
+            Password = "admin1",
+            Role = "Admin"
         });
         base.OnModelCreating(modelBuilder);
     }
