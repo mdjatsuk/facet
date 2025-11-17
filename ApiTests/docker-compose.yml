@@ -11,7 +11,6 @@ services:
       - pg_net
   back_end:
     image: ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
-    #build: ../Backend/FacetApi
     container_name: back_end
     environment:
       - ASPNETCORE_URLS=http://+:5000
