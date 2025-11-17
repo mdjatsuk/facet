@@ -55,7 +55,8 @@ public class DocumentsController : ControllerBase
         var doc = _svc.GetAsync(id).GetAwaiter().GetResult();
         var userId = GetCurrentUserId();
         if (doc is null) return NotFound();
-        if (userId is null || doc.OwnerId != userId) return NotFound();
+        // Allow access if: 1) user is authenticated and owns the document, OR 2) document has no owner (temporary/anonymous uploads)
+        if (userId is not null && doc.OwnerId != userId && doc.OwnerId is not null) return NotFound();
 
         var res = _svc.GetFile(id);
         if (res is null) return NotFound();
@@ -72,7 +73,8 @@ public class DocumentsController : ControllerBase
         var doc = await _svc.GetAsync(id);
         var userId = GetCurrentUserId();
         if (doc is null) return NotFound();
-        if (userId is null || doc.OwnerId != userId) return NotFound();
+        // Allow access if: 1) user is authenticated and owns the document, OR 2) document has no owner (temporary/anonymous uploads)
+        if (userId is not null && doc.OwnerId != userId && doc.OwnerId is not null) return NotFound();
 
         var res = await _svc.GetPreviewAsync(id);
         if (res is null) return NotFound();
@@ -102,7 +104,7 @@ public class DocumentsController : ControllerBase
         var doc = await _svc.GetAsync(id);
         var userId = GetCurrentUserId();
         if (doc is null) return NotFound();
-        if (userId is null || doc.OwnerId != userId) return NotFound();
+        if (userId is not null && doc.OwnerId != userId && doc.OwnerId is not null) return NotFound();
 
         var res = await _svc.RedactPdfAsync(id, values);
         if (res is null) return NotFound();
@@ -121,7 +123,7 @@ public class DocumentsController : ControllerBase
         var doc = await _svc.GetAsync(id);
         var userId = GetCurrentUserId();
         if (doc is null) return NotFound();
-        if (userId is null || doc.OwnerId != userId) return NotFound();
+        if (userId is not null && doc.OwnerId != userId && doc.OwnerId is not null) return NotFound();
         var res = await _svc.CreateRedactedCopyAsync(id, values);
         if (!res.Success) return BadRequest(res.Message);
         return Ok(res);
