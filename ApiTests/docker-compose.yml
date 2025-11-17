@@ -15,6 +15,9 @@ services:
     container_name: back_end
     environment:
       - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Key=qwertyuiopasdfghjklzxcvbnm123456
+      - Jwt__Issuer=Online JWT Builder
     depends_on:
       - postgres
     networks:
