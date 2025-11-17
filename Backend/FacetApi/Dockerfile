@@ -22,7 +22,7 @@ COPY --from=builder /publish .
 RUN mkdir -p ./storage \
     && chmod 777 ./storage
 
-EXPOSE 80
+EXPOSE 8080
 
 RUN addgroup -S runner && adduser -S runner -G runner
 USER runner
