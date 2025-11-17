@@ -6,7 +6,7 @@ variables:
   DOCKER_PUBLIC_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/public
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
-  DOMAIN: facet.itb2203.tautar.ee
+  DOMAIN: 56.228.2.11
 
 stages:
   - build
@@ -82,7 +82,7 @@ deploy:
     - chmod 644 ~/.ssh/known_hosts
   script:
     # loeme GitLabi muutujatest private key
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - echo "("$SSH_PRIVATE_KEY" | tr -d '\r')"
     - ssh-add <(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
 
     # loome ssh ühenduse
