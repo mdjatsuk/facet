@@ -122,7 +122,6 @@ public class DocumentsController : ControllerBase
         var userId = GetCurrentUserId();
         if (doc is null) return NotFound();
         if (userId is null || doc.OwnerId != userId) return NotFound();
-
         var res = await _svc.CreateRedactedCopyAsync(id, values);
         if (!res.Success) return BadRequest(res.Message);
         return Ok(res);
