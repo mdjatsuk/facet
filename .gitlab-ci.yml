@@ -2,7 +2,7 @@ variables:
   DOCKER_DRIVER: overlay2
   # Minu konteineri registri aadress AWS-s (Amazon Elastic Container Registry)
   # Asenda MINU_REGISTRI_NIMI
-  DOCKER_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/facet_db
+  DOCKER_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/facet
   DOCKER_PUBLIC_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/public
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
@@ -82,7 +82,7 @@ deploy:
     - chmod 644 ~/.ssh/known_hosts
   script:
     # loeme GitLabi muutujatest private key
-    - echo "("$SSH_PRIVATE_KEY" | tr -d '\r')"
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
     - ssh-add <(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
 
     # loome ssh ühenduse
