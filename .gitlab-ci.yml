@@ -42,7 +42,7 @@ build:front-end:
     - main
   script:
     # pass the DOMAIN variable into the frontend build as NUXT_PUBLIC_API_BASE so the static build targets the correct API
-  - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} --build-arg NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE} ./Frontend/
+    - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} --build-arg NUXT_PUBLIC_API_BASE="${NUXT_PUBLIC_API_BASE:-https://${DOMAIN}}" ./Frontend/
     - docker push ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA}
   stage: build
 
