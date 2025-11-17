@@ -6,7 +6,7 @@ variables:
   DOCKER_PUBLIC_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/public
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
-  DOMAIN: 56.228.2.11
+  DOMAIN: facet.itb2203.tautar.ee
 
 stages:
   - build
