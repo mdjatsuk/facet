@@ -70,7 +70,7 @@ async function downloadPreview() {
     let filename: string = ''
     if (props.documentId) {
       try {
-        const metaResp = await fetch(`${apiBase}api/documents/${props.documentId}`)
+        const metaResp = await fetch(`${apiBase}/documents/${props.documentId}`)
         if (metaResp.ok) {
           const meta = await metaResp.json()
           if (meta && meta.fileName) filename = meta.fileName as string
