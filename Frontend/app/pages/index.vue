@@ -22,7 +22,7 @@ const selectedDoc = computed(() =>
 )
 const previewUrl = computed(() => {
   const doc = stagedDoc.value || selectedDoc.value
-  return doc ? `${apiBase}api/documents/${doc.id}/file` : ''
+  return doc ? `${apiBase}/documents/${doc.id}/file` : ''
 })
 const previewType = computed(() => {
   const doc = stagedDoc.value || selectedDoc.value
