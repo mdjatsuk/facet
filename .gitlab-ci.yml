@@ -58,8 +58,7 @@ api_test:
     - docker compose down -v
   stage: api_test
 
-
-  deploy:
+deploy:
   when: manual
   only:
     - master
