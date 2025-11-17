@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18-alpine
+    image: ${DOCKER_PUBLIC_REGISTRY}/postgres:18-alpine
     container_name: api_db
     environment:
       - POSTGRES_PASSWORD=postgres
@@ -35,7 +35,7 @@ services:
         "/app/FacetApi.dll",
       ]
   newman:
-    image: postman/newman:alpine
+    image: ${DOCKER_PUBLIC_REGISTRY}/newman:alpine
     entrypoint:
       ["/etc/startup/wait-for", "-t", "30", "back_end:5000", "--", "newman"]
     container_name: newman
