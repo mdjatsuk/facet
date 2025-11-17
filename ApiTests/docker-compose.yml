@@ -17,6 +17,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - Jwt__Key=qwertyuiopasdfghjklzxcvbnm123456
       - Jwt__Issuer=Online JWT Builder
+      - ConnectionStrings__Default=Host=db;Port=5433;Database=facet-db;Username=postgres;Password=postgres
     depends_on:
       - postgres
     networks:
