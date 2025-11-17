@@ -44,7 +44,6 @@ public class DocumentsController : ControllerBase
     {
         // Allow anonymous uploads for test scenarios; ownerId may be null.
         var userId = GetCurrentUserId();
-
         var result = await _svc.UploadAsync(file, userId);
         if (!result.Success) return BadRequest(result.Message);
         return Ok(result);
