@@ -1,6 +1,6 @@
-ARG REGISTRY=""
+ARG REGISTRY=docker.io
 
-FROM ${REGISTRY}/node:24.11-alpine3.21 as builder
+FROM ${REGISTRY}/node:24.11-alpine3.21 AS builder
 RUN npm install -g pnpm
 
 WORKDIR /app

@@ -1,4 +1,7 @@
 # Define base image
+# Allow overriding the registry from CI (e.g. set REGISTRY in the pipeline).
+# Provide a safe default so the build doesn't produce an empty/invalid reference.
+ARG REGISTRY=mcr.microsoft.com
 FROM ${REGISTRY}/dotnet/sdk:9.0-alpine3.22 AS builder
 
 # Copy project files
