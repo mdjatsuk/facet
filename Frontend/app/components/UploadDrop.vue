@@ -42,7 +42,7 @@ async function doUpload(file: File) {
   try {
     const form = new FormData()
     form.append('file', file)
-    const res = await auth.fetchWithToken<UploadResult>('api/documents/upload', { method: 'POST', body: form })
+    const res = await auth.fetchWithToken<UploadResult>('documents/upload', { method: 'POST', body: form })
     if (res.success && res.document) {
       emit('uploaded', { document: res.document, detected: (res as any).detected })
     } else {

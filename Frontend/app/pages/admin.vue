@@ -89,7 +89,7 @@ const fetchUser = async () => {
   success.value = false
   userInfo.value = null
   try {
-    const info = await fetchWithToken(`/api/users/manage/${encodeURIComponent(username.value)}`)
+    const info = await fetchWithToken(`users/manage/${encodeURIComponent(username.value)}`)
     userInfo.value = info
     // prefill role with fetched role
     role.value = info.role || 'User'
@@ -108,7 +108,7 @@ const setRole = async () => {
   message.value = ''
   success.value = false
   try {
-    await fetchWithToken('/api/users/manage/set-role', { method: 'POST', body: { username: username.value, role: role.value } })
+    await fetchWithToken('users/manage/set-role', { method: 'POST', body: { username: username.value, role: role.value } })
     message.value = 'Role updated successfully'
     success.value = true
   } catch (e: any) {
@@ -124,7 +124,7 @@ const banUser = async () => {
   message.value = ''
   success.value = false
   try {
-    await fetchWithToken('/api/users/manage/ban', { method: 'POST', body: { username: username.value, ban: true } })
+    await fetchWithToken('users/manage/ban', { method: 'POST', body: { username: username.value, ban: true } })
     message.value = 'User banned'
     success.value = true
   } catch (e: any) {
@@ -140,7 +140,7 @@ const unbanUser = async () => {
   message.value = ''
   success.value = false
   try {
-    await fetchWithToken('/api/users/manage/ban', { method: 'POST', body: { username: username.value, ban: false } })
+    await fetchWithToken('users/manage/ban', { method: 'POST', body: { username: username.value, ban: false } })
     message.value = 'User unbanned'
     success.value = true
   } catch (e: any) {
@@ -157,7 +157,7 @@ const onDelete = async () => {
   message.value = ''
   success.value = false
   try {
-    await fetchWithToken(`/api/users/manage/${encodeURIComponent(username.value)}`, { method: 'DELETE' })
+    await fetchWithToken(`users/manage/${encodeURIComponent(username.value)}`, { method: 'DELETE' })
     message.value = 'User deleted'
     success.value = true
   } catch (e: any) {

@@ -67,7 +67,7 @@ const activeOptions = computed(() => {
 // Notice from route query 'policy-created' removed to avoid auto-showing a success message after creating a policy.
 
 async function refresh(selectNewId?: string) {
-  docs.value = await get<Document[]>('api/documents')
+  docs.value = await get<Document[]>('documents')
   if (selectNewId) {
     selectedId.value = selectNewId
   } else if (!selectedId.value && docs.value.length > 0) {
@@ -82,7 +82,7 @@ function viewPolicy(id: string) {
 }
 
 async function onDelete(id: string) {
-  await del(`api/documents/${id}`)
+  await del(`documents/${id}`)
   clearDetected(id) 
   await refresh() 
 }
@@ -224,7 +224,7 @@ async function applySelected() {
   console.log('ApplySelected called for', targetId, 'values:', vals)
   if (!vals || vals.length === 0) { alert('No selections for the selected document'); return }
   try {
-    const res = await post<any>(`/api/documents/${targetId}/redact/save`, { values: vals })
+    const res = await post<any>(`documents/${targetId}/redact/save`, { values: vals })
     console.log('Redacted copy created', res)
     const docId = res?.document?.id || res?.Document?.id
     if (docId) await refresh(docId)
@@ -250,7 +250,7 @@ async function discardStaged() {
   if (!stagedDoc.value?.id) return
   const docId = stagedDoc.value.id
   try {
-    await del(`/api/documents/${docId}`)
+    await del(`documents/${docId}`)
     console.log('Staged document discarded')
     stagedDoc.value = null
     clearDetected(docId)
