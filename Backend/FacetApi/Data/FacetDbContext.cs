@@ -12,12 +12,21 @@ public class FacetDbContext : DbContext
     {
         modelBuilder.Entity<Document>().ToTable("Documents");
         modelBuilder.Entity<Document>().HasIndex(d => d.UploadedAt);
+        modelBuilder.Entity<Document>().HasIndex("OwnerId");
+        
+        modelBuilder.Entity<Document>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey("OwnerId")
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
         modelBuilder.Entity<User>().ToTable("Users");
         modelBuilder.Entity<User>().HasData(new User
         {
             Id = 1,
-            Username = "testuser",
-            Password = "testpass"
+            Username = "admin",
+            Password = "admin1",
+            Role = "Admin"
         });
         base.OnModelCreating(modelBuilder);
     }

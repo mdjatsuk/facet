@@ -3,6 +3,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApi } from '../../composables/useApi'
+import { useAuth } from '../../composables/useAuth'
 import { useRuntimeConfig } from 'nuxt/app'
 
 const router = useRouter()
@@ -39,11 +40,13 @@ async function submit() {
       options: { ...options.value }
     }
 
-    const saved = JSON.parse(localStorage.getItem('policies') || '[]')
+    const { currentUsername } = useAuth()
+    const key = `policies_${currentUsername.value ?? 'anon'}`
+    const saved = JSON.parse(localStorage.getItem(key) || '[]')
 
     saved.push(newPolicy)
 
-    localStorage.setItem('policies', JSON.stringify(saved))
+    localStorage.setItem(key, JSON.stringify(saved))
 
     await router.push({ path: '/', query: { notice: 'policy-created' } })
   } catch (err: any) {
@@ -91,32 +94,6 @@ async function submit() {
             </div>
           </label>
 
-          <!--<label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.anonymizeNames" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Anonymize personal names</div>
-              <div class="text-sm muted">e.g., replacing "John Smith" with "Person A" or "[REDACTED]"</div>
-            </div>
-          </label>
-          -->
-
-          <!--<label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.removeMailingAddresses" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Remove mailing addresses</div>
-              <div class="text-sm muted">e.g., street names, apartment numbers, ZIP codes</div>
-            </div>
-          </label>
-          -->
-
-          <!--<label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.deleteIPAddresses" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Delete IP addresses</div>
-              <div class="text-sm muted">e.g., IPv4 or IPv6 addresses</div>
-            </div>
-          </label>
-          -->
 
           <label class="flex items-start gap-3">
             <input type="checkbox" v-model="options.removeFinancialInfo" class="accent-blue-500 h-4 w-4 mt-1" />
@@ -125,24 +102,6 @@ async function submit() {
               <div class="text-sm muted">e.g., IBAN</div>
             </div>
           </label>
-
-           <!--<label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.stripMedicalInfo" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Strip medical or health information</div>
-              <div class="text-sm muted">e.g., diagnoses, treatment history</div>
-            </div>
-          </label>
-          -->
-
-          <!--<label class="flex items-start gap-3">
-            <input type="checkbox" v-model="options.removeUsernames" class="accent-blue-500 h-4 w-4 mt-1" />
-            <div>
-              <div class="font-medium">Remove usernames or login credentials</div>
-              <div class="text-sm muted">e.g., "admin123", "user@example.com"</div>
-            </div>
-          </label>
-          -->
         </div>
       </div>
 

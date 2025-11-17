@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 const props = defineProps<{ url: string, contentType?: string, documentId?: string }>()
 
 const config = useRuntimeConfig()
@@ -14,23 +14,59 @@ const isText = computed(() =>
   /\.(txt)$/i.test(props.url)
 )
 
-const previewUrl = computed(() => props.url)
-const textPreviewUrl = computed(() => {
-  if (props.documentId && isText.value) {
-    return `${apiBase}api/documents/${props.documentId}/preview`
+
+const objectUrl = ref<string | null>(null)
+const tokenState = useState<string | undefined>('token')
+
+async function loadObjectUrl() {
+  if (objectUrl.value) {
+    URL.revokeObjectURL(objectUrl.value)
+    objectUrl.value = null
   }
+
+  if (!tokenState.value) return
+  if (!props.url || (!props.documentId && !props.url.startsWith(apiBase))) return
+
+  try {
+    const headers: Record<string,string> = { Authorization: `Bearer ${tokenState.value}` }
+    const resp = await fetch(props.url, { method: 'GET', headers })
+    if (!resp.ok) {
+      console.warn('Preview fetch failed', resp.status)
+      return
+    }
+    const blob = await resp.blob()
+    objectUrl.value = URL.createObjectURL(blob)
+  } catch (e) {
+    console.error('Failed to fetch preview with token', e)
+  }
+}
+
+watch(() => [props.url, props.documentId, tokenState.value], () => {
+  loadObjectUrl()
+})
+
+onMounted(() => loadObjectUrl())
+onBeforeUnmount(() => {
+  if (objectUrl.value) URL.revokeObjectURL(objectUrl.value)
+})
+
+const previewUrl = computed(() => {
+  if (isDoc.value) return objectUrl.value || props.url
+  return props.url
+})
+
+const textPreviewUrl = computed(() => {
+  if (isText.value) return objectUrl.value || props.url
   return props.url
 })
 
 async function downloadPreview() {
   try {
     const url = previewUrl.value
-    // If your API requires credentials/cookies: fetch(url, { credentials: 'include' })
     const resp = await fetch(url)
     if (!resp.ok) throw new Error('Failed to fetch file')
     const blob = await resp.blob()
 
-    // Try to get filename from server metadata first (if we have documentId)
     let filename: string = ''
     if (props.documentId) {
       try {
@@ -41,11 +77,9 @@ async function downloadPreview() {
           if (meta && meta.FileName) filename = meta.FileName as string
         }
       } catch (e) {
-        // ignore metadata failure and fall back to headers/url
       }
     }
 
-    // If no metadata name, prefer filename from Content-Disposition, fall back to URL parsing
     if (!filename) {
       const cd = resp.headers.get('content-disposition') || ''
       const fnameMatch = /filename\*=UTF-8''([^;\n\r]+)/i.exec(cd)
@@ -58,22 +92,18 @@ async function downloadPreview() {
     }
 
     if (!filename) {
-      // Use URL parsing (supports relative URLs via base)
       try {
         const u = new URL(url, window.location.href)
         filename = u.pathname.split('/').pop() || 'file'
       } catch (e) {
-        // Fallback if URL parsing fails
         const parts = url.split('/')
         const last = String(parts[parts.length - 1] ?? 'file')
         filename = last.split('?')[0] ?? 'file'
       }
     }
 
-    // sanitize filename a bit
     filename = filename.replace(/[\r\n\0"\\]/g, '') || 'file'
 
-  // Use original filename as-is (no Copy_ prefix)
   const downloadName = filename
 
     const objUrl = URL.createObjectURL(blob)
@@ -96,7 +126,6 @@ async function downloadPreview() {
       <button @click="downloadPreview" class="px-3 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded">Download</button>
     </div>
     <template v-if="isDoc">
-      <!-- Use Word preview component for exact 1:1 rendering -->
       <WordPreview :url="previewUrl" />
     </template>
     <template v-else-if="isText">

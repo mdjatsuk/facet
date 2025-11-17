@@ -12,4 +12,6 @@ public class Document
     public string ContentType { get; set; } = "application/octet-stream";
     public long SizeBytes { get; set; }
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+    public bool IsTemporary { get; set; } = true;
+    public int? OwnerId { get; set; }
 }

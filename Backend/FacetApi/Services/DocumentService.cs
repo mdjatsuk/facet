@@ -308,7 +308,7 @@ public class DocumentService : IDocumentService
         return sb.ToString();
     }
 
-    public async Task<UploadResult> UploadAsync(IFormFile file)
+    public async Task<UploadResult> UploadAsync(IFormFile file, int? ownerId)
     {
         if (file is null || file.Length == 0)
             return new UploadResult(false, "Faili ei leitud või fail on tühi.", null);
@@ -335,7 +335,9 @@ public class DocumentService : IDocumentService
             FileName = Path.GetFileName(file.FileName),
             ContentType = contentType,
             SizeBytes = file.Length,
-            UploadedAt = DateTime.UtcNow
+            UploadedAt = DateTime.UtcNow,
+            IsTemporary = true,
+            OwnerId = ownerId
         };
         _db.Documents.Add(doc);
 
@@ -505,12 +507,17 @@ public class DocumentService : IDocumentService
             _ => "application/octet-stream"
         };
         
+        // Preserve owner of the original document so the redacted copy is visible to the same user
+        var originalOwnerId = (await _db.Documents.FindAsync(id))?.OwnerId;
+
         var newDoc = new DocModel
         {
             FileName = fileName,
             ContentType = contentType,
             SizeBytes = stream.Length,
-            UploadedAt = DateTime.UtcNow
+            UploadedAt = DateTime.UtcNow,
+            IsTemporary = false
+            , OwnerId = originalOwnerId
         };
 
         _db.Documents.Add(newDoc);
