@@ -7,6 +7,7 @@ variables:
   DOCKER_PUBLIC_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/public
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
+  AWS_DEFAULT_REGION: eu-north-1
   # muuda enda domeeniks või virtuaalmasina IP-ks
   DOMAIN: facet.itb2203.tautar.ee
 
@@ -34,7 +35,7 @@ build:back-end:
     - master
     - main
   script:
-    - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} ./BackEnd/FacetApi/
+    - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} ./Backend/FacetApi/
     - docker push ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
   stage: build
 
@@ -43,7 +44,7 @@ build:front-end:
     - master
     - main
   script:
-    - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} ./FrontEnd/
+    - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} ./Frontend/
     - docker push ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA}
   stage: build
 
