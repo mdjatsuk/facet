@@ -65,24 +65,14 @@ deploy:
     - master
     - main
   before_script:
-    # teeme kindlaks, et ssh on installitud
     - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client git -y )"
-
-    # käivitame ssh
     - eval $(ssh-agent -s)
-
-    # loome ssh kausta ja anname ssh kaustas lugemise, kirjutamise ja käivitamise õigused
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-
-    # lisame private key ssh agentile
     - ssh-add <(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
-
-    # leiame serveri public key-d ja usaldame neid runneri keskkonnas
     - ssh-keyscan -H ${DOMAIN} >> ~/.ssh/known_hosts 2>&1 || echo "Warning: Could not scan host key"
     - chmod 644 ~/.ssh/known_hosts
   script:
-    # loome ssh ühenduse ja käivitame docker compose
     - ssh -o StrictHostKeyChecking=no ubuntu@${DOMAIN} "cd ~/app && (aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}) && CI_COMMIT_SHA=${CI_COMMIT_SHA} docker compose -f ./compose.yml up -d"
   stage: deploy
 
