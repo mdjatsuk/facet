@@ -75,18 +75,15 @@ deploy:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
 
-    # leiame kõik serveri public key-d ja usaldame neid runneri keskkonnas
-    - ssh-keyscan ${DOMAIN} >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-  script:
-    # loeme GitLabi muutujatest private key
-    - echo "("$SSH_PRIVATE_KEY" | tr -d '\r')"
+    # lisame private key ssh agentile
     - ssh-add <(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
 
-    # loome ssh ühenduse
-    - ssh ubuntu@${DOMAIN} "(aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}) && CI_COMMIT_SHA=${CI_COMMIT_SHA} docker compose -f ~/app/compose.yml up -d"
-  after_script:
-    - exit
+    # leiame serveri public key-d ja usaldame neid runneri keskkonnas
+    - ssh-keyscan -H ${DOMAIN} >> ~/.ssh/known_hosts 2>&1 || echo "Warning: Could not scan host key"
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    # loome ssh ühenduse ja käivitame docker compose
+    - ssh -o StrictHostKeyChecking=no ubuntu@${DOMAIN} "cd ~/app && (aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}) && CI_COMMIT_SHA=${CI_COMMIT_SHA} docker compose -f ./compose.yml up -d"
   stage: deploy
 
 
