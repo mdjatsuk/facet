@@ -3,9 +3,11 @@ variables:
   # Minu konteineri registri aadress AWS-s (Amazon Elastic Container Registry)
   # Asenda MINU_REGISTRI_NIMI
   DOCKER_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/facet
+  # Dockeri imageid on kopeeritud AWS registrisse, et vältida limiite imageite pullimisel Docker Hubist
   DOCKER_PUBLIC_REGISTRY: 662032419283.dkr.ecr.eu-north-1.amazonaws.com/public
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
+  # muuda enda domeeniks või virtuaalmasina IP-ks
   DOMAIN: facet.itb2203.tautar.ee
 
 stages:
@@ -32,7 +34,7 @@ build:back-end:
     - master
     - main
   script:
-    - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} ./Backend/FacetApi/
+    - docker build -t ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} ./BackEnd/FacetApi/
     - docker push ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
   stage: build
 
@@ -41,8 +43,7 @@ build:front-end:
     - master
     - main
   script:
-    # pass the DOMAIN variable into the frontend build as NUXT_PUBLIC_API_BASE so the static build targets the correct API
-    - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} --build-arg NUXT_PUBLIC_API_BASE="${NUXT_PUBLIC_API_BASE:-https://${DOMAIN}}" ./Frontend/
+    - docker build -t ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA} --build-arg REGISTRY=${DOCKER_PUBLIC_REGISTRY} ./FrontEnd/
     - docker push ${DOCKER_REGISTRY}/front:${CI_COMMIT_SHA}
   stage: build
 
@@ -58,7 +59,7 @@ api_test:
     - docker compose up --abort-on-container-exit --exit-code-from newman
     - docker compose down -v
   stage: api_test
-
+  
 deploy:
   when: manual
   only:
@@ -78,6 +79,9 @@ deploy:
     # leiame kõik serveri public key-d ja usaldame neid runneri keskkonnas
     - ssh-keyscan ${DOMAIN} >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
+    # leiame kõik serveri public key-d ja usaldame neid runneri keskkonnas
+    - ssh-keyscan ${DOMAIN} >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
   script:
     # loeme GitLabi muutujatest private key
     - echo "("$SSH_PRIVATE_KEY" | tr -d '\r')"
@@ -88,6 +92,4 @@ deploy:
   after_script:
     - exit
   stage: deploy
-
-
-  
+    
