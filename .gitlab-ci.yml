@@ -78,9 +78,6 @@ deploy:
     # leiame kõik serveri public key-d ja usaldame neid runneri keskkonnas
     - ssh-keyscan ${DOMAIN} >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-    # leiame kõik serveri public key-d ja usaldame neid runneri keskkonnas
-    - ssh-keyscan ${DOMAIN} >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
   script:
     # loeme GitLabi muutujatest private key
     - echo "("$SSH_PRIVATE_KEY" | tr -d '\r')"
