@@ -67,28 +67,28 @@ deploy:
     - master
     - main
   before_script:
-    # teeme kindlaks, et ssh on installitud
-    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client git -y )"
+    # kontrollime, et ssh on installitud
+    - which ssh-agent || ( apt-get update -y && apt-get install openssh-client git -y )
 
-    # käivitame ssh
+    # käivitame ssh-agent
     - eval $(ssh-agent -s)
 
-    # loome ssh kausta ja anname ssh kaustas lugemise, kirjutamise ja käivitamise õigused
+    # loome ssh kausta ja määrame õigused
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
 
-    # leiame kõik serveri public key-d ja usaldame neid runneri keskkonnas
-    - ssh-keyscan ${DOMAIN} >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-    # leiame kõik serveri public key-d ja usaldame neid runneri keskkonnas
+    # lisame serveri avaliku võtme known_hosts failisse
     - ssh-keyscan ${DOMAIN} >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    # loeme GitLabi muutujatest private key
-    - echo "("$SSH_PRIVATE_KEY" | tr -d '\r')"
-    - ssh-add <(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
+    # lisame privaatse võtme GitLab muutujatest
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
 
-    # loome ssh ühenduse
+    # kontrollime domeeni ja pordi kättesaadavust (saab hiljem eemaldada)
+    - dig ${DOMAIN}
+    - nc -zv ${DOMAIN} 22
+
+    # juurutame serverile
     - ssh ubuntu@${DOMAIN} "(aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}) && CI_COMMIT_SHA=${CI_COMMIT_SHA} docker compose -f ~/app/compose.yml up -d"
   after_script:
     - exit
