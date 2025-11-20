@@ -50,12 +50,12 @@ function useSelected() {
 <template>
   <div class="listbox">
     <div class="listbox-header">
-      <div class="font-semibold">All Policies</div>
-      <div class="muted">{{ policies.length }}</div>
+      <div class="text-sm sm:text-base font-semibold">All Policies</div>
+      <div class="muted text-xs sm:text-sm">{{ policies.length }}</div>
     </div>
 
     <div class="listbox-body max-h-64 overflow-auto">
-      <div v-if="policies.length === 0" class="text-gray-500 p-4 text-center">
+      <div v-if="policies.length === 0" class="text-gray-500 p-3 sm:p-4 text-center text-sm">
         No policies created.
       </div>
 
@@ -63,25 +63,25 @@ function useSelected() {
         <div :class="cls(p.id)" @click="$emit('select', p.id)" class="flex flex-col">
           <div class="flex items-center justify-between">
             <div class="flex flex-col flex-1 min-w-0 mr-2">
-              <div class="font-medium truncate">{{ p.name }}</div>
+              <div class="text-sm sm:text-base font-medium truncate">{{ p.name }}</div>
             </div>
             <div class="flex gap-1 shrink-0">
               <button 
                 @click.stop="toggleExpand(p.id)" 
-                class="px-3 py-2 text-sm rounded bg-blue-50 hover:bg-blue-100 text-blue-600 transition font-medium"
+                class="px-3 py-2 text-base sm:text-sm rounded bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-600 transition font-medium touch-manipulation"
               >
                 {{ expandedPolicyId === p.id ? '▲' : '▼' }}
               </button>
               <button
                 @click.stop="$emit('delete', p.id)"
-                class="px-3 py-2 text-sm rounded bg-red-50 hover:bg-red-100 text-red-600 transition font-medium"
+                class="px-3 py-2 text-base sm:text-sm rounded bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 transition font-medium touch-manipulation"
               >
                 ×
               </button>
             </div>
           </div>
           
-          <div v-if="expandedPolicyId === p.id" class="mt-2 text-sm pl-4 pb-2">
+          <div v-if="expandedPolicyId === p.id" class="mt-2 text-xs sm:text-sm pl-3 sm:pl-4 pb-2">
             <ul class="text-slate-600 list-disc pl-5">
               <li v-for="opt in getActiveOptions(p)" :key="opt">
                 {{ opt }}
@@ -95,11 +95,11 @@ function useSelected() {
       </template>
     </div>
 
-    <div class="listbox-footer mt-3 px-3 pb-3">
+    <div class="listbox-footer mt-2 sm:mt-3 px-2 sm:px-3 pb-2 sm:pb-3">
       <button
         @click="useSelected"
         :disabled="policies.length === 0"
-        class="w-full px-3 py-2 bg-blue-600 text-white rounded rounded-lg text-sm font-medium disabled:opacity-50"
+        class="w-full px-3 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
       >
         Use Policy
       </button>
