@@ -220,9 +220,8 @@ const userInitials = computed(() => {
 })
 
 function logout() {
-  logOut()
   open.value = false
-  router.push('/')
+  logOut()
 }
 
 function selectDoc(id: string) {
