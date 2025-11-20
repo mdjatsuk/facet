@@ -121,9 +121,9 @@ async function downloadPreview() {
 }
 </script>
 <template>
-  <div class="card p-0 w-full aspect-[210/297] max-h-[80vh] overflow-hidden">
+  <div class="card p-0 w-full aspect-[210/297] max-h-[60vh] sm:max-h-[80vh] overflow-hidden">
     <div class="flex items-center justify-end gap-2 p-2 border-b bg-white">
-      <button @click="downloadPreview" class="px-3 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded">Download</button>
+      <button @click="downloadPreview" class="px-3 py-1.5 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation">Download</button>
     </div>
     <template v-if="isDoc">
       <WordPreview :url="previewUrl" />

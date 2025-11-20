@@ -15,25 +15,25 @@ function cls(id: string) {
 <template>
   <div class="listbox">
     <div class="listbox-header">
-      <div class="font-semibold">Redacted Documents</div>
-      <div class="muted">{{ docs.length }}</div>
+      <div class="text-sm sm:text-base font-semibold">Redacted Documents</div>
+      <div class="muted text-xs sm:text-sm">{{ docs.length }}</div>
     </div>
 
     <div class="listbox-body max-h-64 overflow-auto">
-    <div v-if="docs.length === 0" class="text-gray-500 p-4 text-center">
+    <div v-if="docs.length === 0" class="text-gray-500 p-3 sm:p-4 text-center text-sm">
              No redacted documents yet.
     </div>
 
       <div v-for="d in docs" :key="d.id" :class="cls(d.id)" @click="$emit('select', d.id)">
         <div class="flex flex-col flex-1 min-w-0 mr-2">
-          <div class="font-medium truncate">{{ d.fileName }}</div>
+          <div class="text-sm sm:text-base font-medium truncate">{{ d.fileName }}</div>
           <div class="text-xs text-slate-400">
             <div class="truncate">{{ (d.sizeBytes/1024).toFixed(1).replace('.', ',') }} KB</div>
             <div class="truncate">{{ new Date(d.uploadedAt).toLocaleDateString('et-EE') }} {{ new Date(d.uploadedAt).toLocaleTimeString('et-EE', { hour: '2-digit', minute: '2-digit' }) }}</div>
           </div>
         </div>
         <div class="flex gap-1 shrink-0">
-          <button @click.stop="$emit('delete', d.id)" class="px-3 py-2 text-sm rounded bg-red-50 hover:bg-red-100 text-red-600 transition font-medium">×</button>
+          <button @click.stop="$emit('delete', d.id)" class="px-3 py-2 text-base sm:text-sm rounded bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 transition font-medium touch-manipulation">×</button>
         </div>
       </div>
     </div>
