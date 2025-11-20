@@ -50,6 +50,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("{id:guid}/file")]
+    [AllowAnonymous]
     public IActionResult File(Guid id)
     {
         var doc = _svc.GetAsync(id).GetAwaiter().GetResult();
@@ -68,6 +69,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("{id:guid}/preview")]
+    [AllowAnonymous]
     public async Task<IActionResult> Preview(Guid id)
     {
         var doc = await _svc.GetAsync(id);
