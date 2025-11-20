@@ -49,12 +49,18 @@ import { toRef, computed } from 'vue'
 const props = defineProps<{
   types: string[]  
   docId?: string | null
+  isStaged?: boolean
+  from?: string
 }>()
 
 const docIdRef = toRef(props, 'docId')
+const isStagedRef = toRef(props, 'isStaged')
+const fromRef = toRef(props, 'from')
 const docId = computed(() => docIdRef.value || '')
+const isStaged = computed(() => isStagedRef.value ?? false)
+const from = computed(() => fromRef.value)
 
 function linkFor(t: string) {
-  return { path: `/sensitive/${encodeURIComponent(t)}`, query: { docId: docId.value || undefined } }
+  return { path: `/sensitive/${encodeURIComponent(t)}`, query: { docId: docId.value || undefined, staged: isStaged.value ? 'true' : undefined, from: from.value || undefined } }
 }
 </script>

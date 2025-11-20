@@ -179,6 +179,7 @@ onMounted(() => {
         <div class="relative">
           <PreviewPane 
             v-if="doc" 
+            :key="doc.id"
             :url="previewUrl" 
             :contentType="previewType" 
             :documentId="doc.id"
@@ -205,7 +206,7 @@ onMounted(() => {
                 Back
               </button>
               <NuxtLink
-                :to="{ path: '/sensitive-data', query: { docId: docId } }"
+                :to="{ path: '/sensitive-data', query: { docId: docId, staged: isStaged ? 'true' : undefined } }"
                 class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 touch-manipulation text-sm font-medium transition text-center flex items-center justify-center gap-2"
               >
                 <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

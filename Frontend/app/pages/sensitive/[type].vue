@@ -12,6 +12,7 @@ const type = ref((route.params.type as string) || '')
 const { getDetected } = useDetected()
 
 const docId = computed(() => (route.query.docId as string) || '')
+const isStaged = computed(() => (route.query.staged as string) === 'true')
 
 const allDetected = computed(() => {
   const data = getDetected(docId.value || '')
@@ -49,10 +50,11 @@ function applyAndBack() {
   // Check if coming from sensitive-data page (mobile workflow)
   const referrer = route.query.from as string
   if (referrer === 'sensitive-data') {
-    router.push({ path: '/sensitive-data', query: { docId: docId.value } })
+    // Mobile workflow: return to sensitive-data page
+    router.push({ path: '/sensitive-data', query: { docId: docId.value, staged: isStaged.value ? 'true' : undefined } })
   } else {
-    // PC workflow: return to home page
-    router.push({ path: '/', query: { docId: docId.value } })
+    // PC workflow: just return to home page without query params
+    router.push({ path: '/' })
   }
 }
 </script>

@@ -135,7 +135,7 @@ onMounted(() => {
             <NuxtLink
               v-for="t in uniqueTypes"
               :key="t"
-              :to="{ path: `/sensitive/${encodeURIComponent(t)}`, query: { docId: docId, from: 'sensitive-data' } }"
+              :to="{ path: `/sensitive/${encodeURIComponent(t)}`, query: { docId: docId, staged: isStaged ? 'true' : undefined, from: 'sensitive-data' } }"
               class="block bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-blue-300 active:scale-98 transition touch-manipulation"
             >
               <div class="flex items-center justify-between">

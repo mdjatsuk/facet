@@ -25,6 +25,9 @@ async function loadObjectUrl() {
     objectUrl.value = null
   }
 
+  // Clear text content as well
+  textContent.value = ''
+
   if (!tokenState.value) return
   if (!props.url || (!props.documentId && !props.url.startsWith(apiBase))) return
 
@@ -54,7 +57,7 @@ async function loadObjectUrl() {
 
 watch(() => [props.url, props.documentId, tokenState.value], () => {
   loadObjectUrl()
-})
+}, { deep: true })
 
 onMounted(() => loadObjectUrl())
 onBeforeUnmount(() => {

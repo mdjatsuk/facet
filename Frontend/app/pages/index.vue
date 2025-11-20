@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useDetected } from '../composables/useDetected'
 import { useSelection } from '../composables/useSelection'
 import type { Document, SensitiveItem } from '../types'
 
 const { get, del, post } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
+const router = useRouter()
 
 const docs = ref<Document[]>([])
 const selectedId = ref<string | null>(null)
@@ -252,6 +254,10 @@ async function applySelected() {
   const vals = getValues(targetId)
   console.log('ApplySelected called for', targetId, 'values:', vals)
   if (!vals || vals.length === 0) { alert('No selections for the selected document'); return }
+  
+  // Track if this was a staged document for redirect after apply
+  const wasStaged = stagedDoc.value?.id === targetId
+  
   try {
     const res = await post<any>(`documents/${targetId}/redact/save`, { values: vals })
     console.log('Redacted copy created', res)
@@ -272,6 +278,8 @@ async function applySelected() {
       // If this was a staged document, clear it immediately (this will also clear localStorage via watcher)
       if (stagedDoc.value?.id === targetId) {
         stagedDoc.value = null
+        // Explicitly remove from localStorage to ensure it's cleared
+        localStorage.removeItem(stagedDocKey.value)
       }
       
       // For anonymous users, save the new document ID to localStorage
@@ -285,6 +293,11 @@ async function applySelected() {
       await refresh(newDocId)
       
       console.log('Applied changes: new doc', newDocId, 'is now selected')
+      
+      // If this was a staged document on PC, redirect to home page
+      if (wasStaged) {
+        router.push('/')
+      }
     } else {
       await refresh()
     }
@@ -519,7 +532,7 @@ async function discardStaged() {
               </button>
             </div>
           </div>
-          <PreviewPane v-if="stagedDoc || selectedDoc" :url="previewUrl" :contentType="previewType" :documentId="(stagedDoc || selectedDoc)?.id" />
+          <PreviewPane v-if="stagedDoc || selectedDoc" :key="`${(stagedDoc || selectedDoc)?.id}`" :url="previewUrl" :contentType="previewType" :documentId="(stagedDoc || selectedDoc)?.id" />
           <div v-else class="card p-6 w-full flex items-center justify-center muted" style="height: 842px; max-height: 80vh;">Nothing to display</div>
         </div>
       </section>
