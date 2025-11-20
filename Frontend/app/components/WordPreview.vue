@@ -2,7 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { renderAsync } from 'docx-preview'
 
-const props = defineProps<{ url: string }>()
+const props = defineProps<{ url: string, fullScreen?: boolean }>()
 const container = ref<HTMLElement | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -60,7 +60,7 @@ watch(() => props.url, () => {
 </script>
 
 <template>
-  <div class="word-preview-container w-full h-full overflow-auto bg-gray-100">
+  <div class="word-preview-container w-full h-full bg-gray-100">
     <div v-if="loading" class="flex items-center justify-center h-full">
       <div class="text-center">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -76,8 +76,10 @@ watch(() => props.url, () => {
     
     <div 
       ref="container" 
-      class="docx-container p-4"
-      :class="{ 'hidden': loading || error }"
+      :class="[
+        fullScreen ? 'docx-container-mobile' : 'docx-container',
+        { 'hidden': loading || error }
+      ]"
     ></div>
   </div>
 </template>
@@ -85,19 +87,32 @@ watch(() => props.url, () => {
 <style>
 .word-preview-container {
   background: #525659;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 .docx-container {
-  max-width: 210mm;
-  margin: 0 auto;
+  padding: 1rem;
+  width: max-content;
+  min-width: 100%;
+}
+
+.docx-container-mobile {
+  padding: 0.5rem 0.5rem 6rem 0.5rem; /* Extra bottom padding for mobile nav bar */
+  width: 100%;
+  min-height: 100%;
 }
 
 .docx-preview {
   background: white;
   box-shadow: 0 0 10px rgba(0,0,0,0.3);
-  margin-bottom: 20px;
-  padding: 96px; /* Standard Word margins */
+  margin: 0 auto 20px auto;
+  padding: 25.4mm; /* 1 inch margins = 25.4mm */
+  width: 210mm; /* A4 width */
   min-height: 297mm; /* A4 height */
+  box-sizing: border-box;
 }
 
 /* Preserve Word document styling */
@@ -116,5 +131,34 @@ watch(() => props.url, () => {
 .docx-preview td, .docx-preview th {
   border: 1px solid #ddd;
   padding: 8px;
+  word-wrap: break-word;
+}
+
+/* Ensure images don't overflow */
+.docx-preview img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mobile: keep A4 format, allow horizontal scroll, add bottom padding */
+@media (max-width: 640px) {
+  .word-preview-container {
+    touch-action: pan-x pan-y;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+  }
+  
+  .docx-container-mobile {
+    padding: 0.5rem 0.5rem 8rem 0.5rem; /* Extra bottom padding for mobile nav bar */
+    width: fit-content;
+    min-width: 100%;
+  }
+  
+  .docx-container-mobile .docx-preview {
+    width: 210mm !important; /* Keep A4 width on mobile */
+    min-height: 297mm !important; /* Keep A4 height on mobile */
+    padding: 25.4mm !important; /* Keep standard margins */
+    margin: 0 auto 2rem auto; /* Add bottom margin */
+  }
 }
 </style>

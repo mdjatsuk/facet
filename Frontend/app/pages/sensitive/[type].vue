@@ -45,8 +45,15 @@ onMounted(() => {
 })
 
 function applyAndBack() {
-  // Return to main page and keep the current document selected by passing docId in query
-  router.push({ path: '/', query: { docId: docId.value } })
+  // Return to home page on PC, or sensitive-data page on mobile
+  // Check if coming from sensitive-data page (mobile workflow)
+  const referrer = route.query.from as string
+  if (referrer === 'sensitive-data') {
+    router.push({ path: '/sensitive-data', query: { docId: docId.value } })
+  } else {
+    // PC workflow: return to home page
+    router.push({ path: '/', query: { docId: docId.value } })
+  }
 }
 </script>
 
