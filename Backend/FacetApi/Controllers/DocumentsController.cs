@@ -85,12 +85,16 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> Delete(Guid id)
     {
         var doc = await _svc.GetAsync(id);
         var userId = GetCurrentUserId();
         if (doc is null) return NotFound();
-        if (userId is null || doc.OwnerId != userId) return NotFound();
+        // Allow deletion if: 1) user is authenticated and owns the document, OR 2) document has no owner (temporary/anonymous uploads)
+        if (userId is not null && doc.OwnerId != userId && doc.OwnerId is not null) return NotFound();
+        // For anonymous documents, allow deletion
+        if (userId is null && doc.OwnerId is not null) return NotFound();
 
         var ok = await _svc.DeleteAsync(id);
         if (!ok) return NotFound("Fail ei leitud.");
@@ -100,12 +104,14 @@ public class DocumentsController : ControllerBase
     public class RedactRequest { public List<string>? Values { get; set; } }
 
     [HttpPost("{id:guid}/redact")]
+    [AllowAnonymous]
     public async Task<IActionResult> Redact(Guid id, [FromBody] RedactRequest req)
     {
         var values = req?.Values ?? new List<string>();
         var doc = await _svc.GetAsync(id);
         var userId = GetCurrentUserId();
         if (doc is null) return NotFound();
+        // Allow access if: 1) user is authenticated and owns the document, OR 2) document has no owner (temporary/anonymous uploads)
         if (userId is not null && doc.OwnerId != userId && doc.OwnerId is not null) return NotFound();
 
         var res = await _svc.RedactPdfAsync(id, values);
@@ -119,12 +125,14 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/redact/save")]
+    [AllowAnonymous]
     public async Task<IActionResult> RedactAndSave(Guid id, [FromBody] RedactRequest req)
     {
         var values = req?.Values ?? new List<string>();
         var doc = await _svc.GetAsync(id);
         var userId = GetCurrentUserId();
         if (doc is null) return NotFound();
+        // Allow access if: 1) user is authenticated and owns the document, OR 2) document has no owner (temporary/anonymous uploads)
         if (userId is not null && doc.OwnerId != userId && doc.OwnerId is not null) return NotFound();
         var res = await _svc.CreateRedactedCopyAsync(id, values);
         if (!res.Success) return BadRequest(res.Message);

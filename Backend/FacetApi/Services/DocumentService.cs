@@ -431,7 +431,11 @@ public class DocumentService : IDocumentService
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToArray() ?? Array.Empty<string>();
 
-    if (tokens.Length == 0) return null;
+    if (tokens.Length == 0) 
+    {
+        _logger?.LogWarning("No valid tokens to redact for id={Id}", id);
+        return null;
+    }
 
     try
     {
@@ -492,9 +496,9 @@ public class DocumentService : IDocumentService
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Redaction failed for id={Id}", id);
-            return new Models.UploadResult(false, "Redaction failed", null, null);
+            return new Models.UploadResult(false, "Redaction failed: " + ex.Message, null, null);
         }
-        if (red is null) return new Models.UploadResult(false, "Redaction failed or unsupported format", null, null);
+        if (red is null) return new Models.UploadResult(false, "Redaction failed: No items selected or unsupported file format", null, null);
 
         var (stream, fileName) = red.Value;
         

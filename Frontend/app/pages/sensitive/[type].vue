@@ -12,6 +12,7 @@ const type = ref((route.params.type as string) || '')
 const { getDetected } = useDetected()
 
 const docId = computed(() => (route.query.docId as string) || '')
+const isStaged = computed(() => (route.query.staged as string) === 'true')
 
 const allDetected = computed(() => {
   const data = getDetected(docId.value || '')
@@ -45,8 +46,16 @@ onMounted(() => {
 })
 
 function applyAndBack() {
-  // Return to main page and keep the current document selected by passing docId in query
-  router.push({ path: '/', query: { docId: docId.value } })
+  // Return to home page on PC, or sensitive-data page on mobile
+  // Check if coming from sensitive-data page (mobile workflow)
+  const referrer = route.query.from as string
+  if (referrer === 'sensitive-data') {
+    // Mobile workflow: return to sensitive-data page
+    router.push({ path: '/sensitive-data', query: { docId: docId.value, staged: isStaged.value ? 'true' : undefined } })
+  } else {
+    // PC workflow: just return to home page without query params
+    router.push({ path: '/' })
+  }
 }
 </script>
 
