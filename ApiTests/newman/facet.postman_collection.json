@@ -1,105 +1,176 @@
 {
-  "info": {
-    "_postman_id": "de4407ed-9209-4259-bd42-454828868e22",
-    "name": "facet",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "48243079"
-  },
-  "item": [
-
-    {
-      "name": "Upload File",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "// If the response is not 200, stop here to avoid JSON parse errors on empty/500 responses.",
-              "if (pm.response.code !== 200) {",
-              "    return;",
-              "}",
-              "",
-              "pm.test(\"Upload succeeded and returned document info\", function () {",
-              "    const data = pm.response.json();",
-              "    pm.expect(data).to.have.property('success', true);",
-              "    pm.expect(data.document).to.be.an('object');",
-              "    pm.expect(data.document.sizeBytes).to.be.a('number').that.is.above(0);",
-              "    pm.environment.set('documentId', data.document.id);",
-              "});"
-            ],
-            "type": "text/javascript",
-			"packages": {},
-			"requests": {}
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "formdata",
-          "formdata": [
-            {
-              "key": "file",
-              "type": "file",
-              "src": "{{uploadFilePath}}"
-            }
-          ]
-        },
-        "url": {
-          "raw": "{{url}}/api/documents/upload",
-          "host": ["{{url}}"],
-          "path": ["api", "documents", "upload"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Get Document by ID",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "// If the response is not 200, stop here to avoid JSON parse errors on empty/500 responses.",
-              "if (pm.response.code !== 200) {",
-              "    return;",
-              "}",
-              "",
-              "pm.test(\"Response contains expected document fields\", function () {",
-              "    const data = pm.response.json();",
-              "    pm.expect(data).to.have.property('id');",
-              "    pm.expect(data).to.have.property('fileName');",
-              "    pm.expect(data).to.have.property('sizeBytes');",
-              "});",
-              "",
-              "pm.test(\"Document ID matches uploaded one\", function () {",
-              "    const data = pm.response.json();",
-              "    pm.expect(data.id).to.eql(pm.environment.get('documentId'));",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{url}}/api/documents/{{documentId}}",
-          "host": ["{{url}}"],
-          "path": ["api", "documents", "{{documentId}}"]
-        }
-      },
-      "response": []
-    }
-  ]
+	"info": {
+		"_postman_id": "c5269a1e-e9ae-4717-8838-18c07f60c0c5",
+		"name": "facet",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48245513",
+		"_collection_link": "https://arkovr-5747942.postman.co/workspace/Artjom-Kovrigin's-Workspace~918b65ed-fed0-4437-850e-64ddccd87dde/collection/48245513-c5269a1e-e9ae-4717-8838-18c07f60c0c5?action=share&source=collection_link&creator=48245513"
+	},
+	"item": [
+		{
+			"name": "Upload File",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// If the response is not 200, stop here to avoid JSON parse errors on empty/500 responses.",
+							"if (pm.response.code !== 200) {",
+							"    return;",
+							"}",
+							"",
+							"pm.test(\"Upload succeeded and returned document info\", function () {",
+							"    const data = pm.response.json();",
+							"    pm.expect(data).to.have.property('success', true);",
+							"    pm.expect(data.document).to.be.an('object');",
+							"    pm.expect(data.document.sizeBytes).to.be.a('number').that.is.above(0);",
+							"    pm.environment.set('documentId', data.document.id);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "{{uploadFilePath}}"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{url}}/api/documents/upload",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"documents",
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Document by ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// If the response is not 200, stop here to avoid JSON parse errors on empty/500 responses.",
+							"if (pm.response.code !== 200) {",
+							"    return;",
+							"}",
+							"",
+							"pm.test(\"Response contains expected document fields\", function () {",
+							"    const data = pm.response.json();",
+							"    pm.expect(data).to.have.property('id');",
+							"    pm.expect(data).to.have.property('fileName');",
+							"    pm.expect(data).to.have.property('sizeBytes');",
+							"});",
+							"",
+							"pm.test(\"Document ID matches uploaded one\", function () {",
+							"    const data = pm.response.json();",
+							"    pm.expect(data.id).to.eql(pm.environment.get('documentId'));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/documents/{{documentId}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"documents",
+						"{{documentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete file",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 204\", function () {\r",
+							"    pm.response.to.have.status(204);\r",
+							"});\r",
+							"\r",
+							"// If the response is not 204, stop here\r",
+							"if (pm.response.code !== 204) {\r",
+							"    return;\r",
+							"}\r",
+							"\r",
+							"pm.test(\"Document deleted successfully\", function () {\r",
+							"    pm.expect(pm.response.code).to.equal(204);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Document count is now 0\", function () {\r",
+							"    pm.sendRequest({\r",
+							"        url: pm.environment.get('baseUrl') + '/api/documents',\r",
+							"        method: 'GET',\r",
+							"        header: {\r",
+							"            'Authorization': 'Bearer ' + pm.environment.get('token')\r",
+							"        }\r",
+							"    }, function (err, response) {\r",
+							"        if (!err && response.code === 200) {\r",
+							"            const data = response.json();\r",
+							"            const count = Array.isArray(data) ? data.length : 0;\r",
+							"            pm.expect(count).to.equal(0);\r",
+							"        }\r",
+							"    });\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/documents/{{documentId}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"documents",
+						"{{documentId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
 }
