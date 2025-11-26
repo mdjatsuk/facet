@@ -20,6 +20,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> List()
     {
         var userId = GetCurrentUserId();
