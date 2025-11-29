@@ -42,7 +42,7 @@ async function doUpload(file: File) {
   try {
     const form = new FormData()
     form.append('file', file)
-    const res = await auth.fetchWithToken<UploadResult>('api/documents/upload', { method: 'POST', body: form })
+    const res = await auth.fetchWithToken<UploadResult>('documents/upload', { method: 'POST', body: form })
     if (res.success && res.document) {
       emit('uploaded', { document: res.document, detected: (res as any).detected })
     } else {
@@ -71,9 +71,9 @@ function onDrop(e: DragEvent) {
 </script>
 <template>
   <div class="flex justify-center">
-    <div class="w-56">
+    <div class="w-full sm:w-56">
       <div
-        class="group w-full h-28 bg-white rounded-2xl border-2 border-dashed flex items-center justify-center px-4 hover:shadow-soft hover:bg-primary/10 hover:border-primary transition transform duration-150 hover:scale-105 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-1"
+        class="group w-full h-32 sm:h-28 bg-white rounded-2xl border-2 border-dashed flex items-center justify-center px-4 hover:shadow-soft hover:bg-primary/10 hover:border-primary transition transform duration-150 active:scale-95 sm:hover:scale-105 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-1 touch-manipulation"
         :class="[dragOver ? 'border-primary bg-primary/12' : 'border-slate-200']"
         @click="onZoneClick"
         @dragover.prevent="dragOver = true"
@@ -87,10 +87,10 @@ function onDrop(e: DragEvent) {
         aria-label="Upload document"
       >
         <div class="flex flex-col items-center gap-1 text-center">
-          <svg class="h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <svg class="h-6 w-6 sm:h-6 sm:w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0l3.5 3.5M12 4L8.5 7.5" />
           </svg>
-          <div class="text-lg font-semibold text-slate-800">Upload file</div>
+          <div class="text-base sm:text-lg font-semibold text-slate-800">Upload file</div>
           <p class="text-xs text-slate-500">DOC, DOCX, TXT — up to 10MB</p>
           <input ref="fileInput" type="file" accept=".doc,.docx,.txt" @change="onInput" class="hidden" id="fileInput">
           <div v-if="busy" class="text-xs text-slate-500 animate-pulse mt-1">Uploading…</div>

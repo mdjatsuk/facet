@@ -1,55 +1,55 @@
 <template>
-  <div class="p-6 max-w-xl mx-auto">
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold">Manage users</h1>
-      <button @click="navigateBack" class="px-3 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded">← Back</button>
+  <div class="p-3 sm:p-6 max-w-xl mx-auto">
+    <div class="flex items-center justify-between mb-4 gap-3">
+      <h1 class="text-xl sm:text-2xl font-bold">Manage users</h1>
+      <button @click="navigateBack" class="px-2 py-1 sm:px-3 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation whitespace-nowrap">← Back</button>
     </div>
 
-    <div v-if="!isAdmin" class="text-red-600">You are not authorized to view this page.</div>
+    <div v-if="!isAdmin" class="text-red-600 text-sm sm:text-base">You are not authorized to view this page.</div>
 
     <div v-if="isAdmin" class="space-y-4">
       <div>
-        <label class="block mb-2">Username</label>
-        <input v-model="username" @keyup.enter="fetchUser" placeholder="Type username and press Enter" class="w-full p-2 border rounded" />
+        <label class="block mb-2 text-sm sm:text-base">Username</label>
+        <input v-model="username" @keyup.enter="fetchUser" placeholder="Type username and press Enter" class="w-full p-2 sm:p-2.5 border rounded text-base" />
         <div class="text-xs text-slate-500 mt-1">Press Enter to load user info</div>
       </div>
 
-  <div class="grid grid-cols-2 gap-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label class="block mb-2">Set role</label>
-          <select v-model="role" class="w-full p-2 border rounded mb-2">
+          <label class="block mb-2 text-sm sm:text-base">Set role</label>
+          <select v-model="role" class="w-full p-2 sm:p-2.5 border rounded mb-2 text-base">
             <option value="User">User</option>
             <option value="Admin">Admin</option>
           </select>
-          <button @click="setRole" :disabled="loading || !username" class="w-full px-3 py-2 bg-blue-600 text-white rounded">Set Role</button>
+          <button @click="setRole" :disabled="loading || !username" class="w-full px-3 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">Set Role</button>
         </div>
 
         <div>
-          <label class="block mb-2">Ban / Unban</label>
-          <div class="flex gap-2">
-            <button @click="banUser" :disabled="loading || !username" class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded">Ban user</button>
-            <button @click="unbanUser" :disabled="loading || !username" class="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded">Unban user</button>
+          <label class="block mb-2 text-sm sm:text-base">Ban / Unban</label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <button @click="banUser" :disabled="loading || !username" class="flex-1 px-3 py-2.5 sm:py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">Ban</button>
+            <button @click="unbanUser" :disabled="loading || !username" class="flex-1 px-3 py-2.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">Unban</button>
           </div>
           <div class="text-xs text-slate-500 mt-1">Banned users cannot log in until unbanned.</div>
         </div>
       </div>
 
       <div>
-        <label class="block mb-2">Delete account</label>
-        <button @click="onDelete" :disabled="loading || !username" class="w-full px-3 py-2 bg-red-700 hover:bg-red-800 text-white rounded">Delete user (permanent)</button>
+        <label class="block mb-2 text-sm sm:text-base">Delete account</label>
+        <button @click="onDelete" :disabled="loading || !username" class="w-full px-3 py-2.5 sm:py-2 bg-red-700 hover:bg-red-800 active:bg-red-900 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">Delete user (permanent)</button>
       </div>
 
-      <div v-if="message" class="mt-2" :class="{ 'text-green-600': success, 'text-red-600': !success }">{{ message }}</div>
+      <div v-if="message" class="mt-2 text-sm sm:text-base" :class="{ 'text-green-600': success, 'text-red-600': !success }">{{ message }}</div>
 
-      <div v-if="userInfo" class="mt-4 p-4 border rounded bg-white shadow-sm">
+      <div v-if="userInfo" class="mt-4 p-3 sm:p-4 border rounded bg-white shadow-sm">
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-sm text-slate-600">User info</div>
-            <div class="font-medium text-lg">{{ userInfo.username }}</div>
+            <div class="text-xs sm:text-sm text-slate-600">User info</div>
+            <div class="font-medium text-base sm:text-lg break-words">{{ userInfo.username }}</div>
           </div>
-          <div class="text-sm text-slate-500">ID: {{ userInfo.id }}</div>
+          <div class="text-xs sm:text-sm text-slate-500">ID: {{ userInfo.id }}</div>
         </div>
-        <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">
           <div>Role: <span class="font-medium">{{ userInfo.role }}</span></div>
           <div>Status: <span :class="userInfo.isBanned ? 'text-red-600 font-medium' : 'text-emerald-600 font-medium'">{{ userInfo.isBanned ? 'Banned' : 'Active' }}</span></div>
         </div>
@@ -89,7 +89,7 @@ const fetchUser = async () => {
   success.value = false
   userInfo.value = null
   try {
-    const info = await fetchWithToken(`/api/users/manage/${encodeURIComponent(username.value)}`)
+    const info = await fetchWithToken(`users/manage/${encodeURIComponent(username.value)}`)
     userInfo.value = info
     // prefill role with fetched role
     role.value = info.role || 'User'
@@ -108,7 +108,7 @@ const setRole = async () => {
   message.value = ''
   success.value = false
   try {
-    await fetchWithToken('/api/users/manage/set-role', { method: 'POST', body: { username: username.value, role: role.value } })
+    await fetchWithToken('users/manage/set-role', { method: 'POST', body: { username: username.value, role: role.value } })
     message.value = 'Role updated successfully'
     success.value = true
   } catch (e: any) {
@@ -124,7 +124,7 @@ const banUser = async () => {
   message.value = ''
   success.value = false
   try {
-    await fetchWithToken('/api/users/manage/ban', { method: 'POST', body: { username: username.value, ban: true } })
+    await fetchWithToken('users/manage/ban', { method: 'POST', body: { username: username.value, ban: true } })
     message.value = 'User banned'
     success.value = true
   } catch (e: any) {
@@ -140,7 +140,7 @@ const unbanUser = async () => {
   message.value = ''
   success.value = false
   try {
-    await fetchWithToken('/api/users/manage/ban', { method: 'POST', body: { username: username.value, ban: false } })
+    await fetchWithToken('users/manage/ban', { method: 'POST', body: { username: username.value, ban: false } })
     message.value = 'User unbanned'
     success.value = true
   } catch (e: any) {
@@ -157,7 +157,7 @@ const onDelete = async () => {
   message.value = ''
   success.value = false
   try {
-    await fetchWithToken(`/api/users/manage/${encodeURIComponent(username.value)}`, { method: 'DELETE' })
+    await fetchWithToken(`users/manage/${encodeURIComponent(username.value)}`, { method: 'DELETE' })
     message.value = 'User deleted'
     success.value = true
   } catch (e: any) {

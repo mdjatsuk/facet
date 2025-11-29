@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18-alpine
+    image: ${DOCKER_PUBLIC_REGISTRY}/postgres:18-alpine
     container_name: api_db
     environment:
       - POSTGRES_PASSWORD=postgres
@@ -11,10 +11,13 @@ services:
       - pg_net
   back_end:
     image: ${DOCKER_REGISTRY}/back:${CI_COMMIT_SHA}
-    #build: ../Backend/FacetApi
     container_name: back_end
     environment:
       - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Key=qwertyuiopasdfghjklzxcvbnm123456
+      - Jwt__Issuer=Online JWT Builder
+      - ConnectionStrings__Default=Host=db;Port=5433;Database=facet-db;Username=postgres;Password=postgres
     depends_on:
       - postgres
     networks:
@@ -35,7 +38,7 @@ services:
         "/app/FacetApi.dll",
       ]
   newman:
-    image: postman/newman:alpine
+    image: ${DOCKER_PUBLIC_REGISTRY}/newman:alpine
     entrypoint:
       ["/etc/startup/wait-for", "-t", "30", "back_end:5000", "--", "newman"]
     container_name: newman

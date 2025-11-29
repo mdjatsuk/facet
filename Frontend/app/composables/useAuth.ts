@@ -51,7 +51,7 @@ export const useAuth = () => {
 
   const logIn = async (user: User) => {
     try {
-      const tokenResp = await api.post<any>("api/users", user);
+      const tokenResp = await api.post<any>("users", user);
       const jwt = typeof tokenResp === 'string' ? tokenResp : tokenResp?.token;
       if (jwt) {
         activeToken.value = jwt;
@@ -96,7 +96,7 @@ export const useAuth = () => {
 
   const register = async (user: User) => {
     try {
-      const res = await api.post<any>("api/users/register", user);
+      const res = await api.post<any>("users/register", user);
       if (res) {
         const ok = await logIn(user);
         return ok;

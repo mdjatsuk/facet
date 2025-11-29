@@ -49,7 +49,8 @@ export function useApi() {
 
   async function customFetch<T>(path: string, options?: any): Promise<T> {
     const headers = { ...(options?.headers || {}) } as Record<string,string>
-    if (tokenState.value) headers['Authorization'] = `Bearer ${tokenState.value}`
+    // Only add Authorization header if not already present
+    if (tokenState.value && !headers['Authorization']) headers['Authorization'] = `Bearer ${tokenState.value}`
     return await $fetch<T>(makeUrl(path), { ...(options || {}), headers })
   }
 
