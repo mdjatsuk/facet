@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { onMounted, watch, computed } from 'vue'
+import { onMounted, watch, computed, ref } from 'vue'
+// --- Custom Pattern State ---
+const customTypes = ref<string[]>([])
+
+function onPatternFound(type: string) {
+  if (!customTypes.value.includes(type)) {
+    customTypes.value.push(type)
+  }
+}
 import { useRouter } from 'vue-router'
 import { useDetected } from '../composables/useDetected'
 import { useSelection } from '../composables/useSelection'
@@ -294,9 +302,13 @@ async function applySelected() {
       
       console.log('Applied changes: new doc', newDocId, 'is now selected')
       
-      // If this was a staged document on PC, redirect to home page
+      // If this was a staged document on PC, just stay on home page with new doc selected
+      // The refresh(newDocId) above already sets the selectedId
       if (wasStaged) {
-        router.push('/')
+        // Don't redirect, just ensure we're on the home page
+        if (router.currentRoute.value.path !== '/') {
+          router.push('/')
+        }
       }
     } else {
       await refresh()
@@ -414,14 +426,15 @@ async function discardStaged() {
 
     <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 flex flex-col lg:grid gap-4 sm:gap-6 lg:grid-cols-5">
       <section class="space-y-4 lg:col-span-1 order-1 hidden lg:block">
-          <UploadDrop @uploaded="onUploaded" />
-          <SensitiveDataBox :types="uniqueTypes" :doc-id="stagedDoc?.id || selectedId" />
-          <div class="mt-2 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-            <button @click="applySelected" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 active:bg-blue-800 touch-manipulation text-sm sm:text-base" :disabled="!(stagedDoc?.id || selectedId) || selectedCount === 0">
-              Apply Changes
-            </button>
-            <div class="text-xs sm:text-sm text-slate-600 text-center sm:text-left">Selected: {{ selectedCount }}</div>
-          </div>
+        <UploadDrop @uploaded="onUploaded" />
+        <SensitiveDataBox :types="uniqueTypes" :doc-id="stagedDoc?.id || selectedId" :custom-types="customTypes" />
+        <CustomPatternSearch :doc-id="stagedDoc?.id || selectedId" @pattern-found="onPatternFound" />
+        <div class="mt-2 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+          <button @click="applySelected" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 active:bg-blue-800 touch-manipulation text-sm sm:text-base" :disabled="!(stagedDoc?.id || selectedId) || selectedCount === 0">
+            Apply Changes
+          </button>
+          <div class="text-xs sm:text-sm text-slate-600 text-center sm:text-left">Selected: {{ selectedCount }}</div>
+        </div>
       </section>
 
       <section class="lg:col-span-3 order-2 lg:order-2">
