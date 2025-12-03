@@ -65,6 +65,43 @@
 			"response": []
 		},
 		{
+			"name": "Get All Documents",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// If not 200, stop to avoid JSON parse errors.",
+							"if (pm.response.code !== 200) {",
+							"    return;",
+							"}",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/documents",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"documents"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Get Document by ID",
 			"event": [
 				{
