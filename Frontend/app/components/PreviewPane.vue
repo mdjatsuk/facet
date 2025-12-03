@@ -5,6 +5,8 @@ const props = defineProps<{ url: string, contentType?: string, documentId?: stri
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase as string
 
+const isZoomed = ref(false)
+
 const isDoc = computed(() =>
   /(msword|wordprocessingml)/i.test(props.contentType || '') ||
   /\.(doc|docx)$/i.test(props.url)
@@ -133,10 +135,19 @@ async function downloadPreview() {
     alert('Failed to download file')
   }
 }
+
+function toggleZoom() {
+  isZoomed.value = !isZoomed.value
+}
 </script>
 <template>
   <div class="w-full" :class="fullScreen ? 'fixed inset-0 z-50 bg-white' : 'card p-0 aspect-[210/297] max-h-[60vh] sm:max-h-[80vh]'">
-    <div class="flex items-center justify-end gap-2 p-2 border-b bg-white">
+    <div class="flex items-center justify-between gap-2 p-2 border-b bg-white">
+      <button @click="toggleZoom" class="px-3 py-1.5 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation" title="Fullscreen view">
+        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6v4m12-4h4v4M6 18h4v4m6-4h4v4M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
+        </svg>
+      </button>
       <button @click="downloadPreview" class="px-3 py-1.5 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation">Download</button>
     </div>
     <div :class="fullScreen ? 'h-[calc(100vh-3rem)]' : 'h-full overflow-auto'">
@@ -156,4 +167,40 @@ async function downloadPreview() {
       </template>
     </div>
   </div>
+
+  <!-- Fullscreen zoom modal -->
+  <Teleport to="body">
+    <transition name="fade">
+      <div v-if="isZoomed" class="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-2 p-4 border-b">
+            <h2 class="text-lg font-semibold text-slate-900">Full Preview</h2>
+            <button @click="isZoomed = false" class="p-2 hover:bg-slate-100 rounded transition" title="Close">
+              <svg class="w-5 h-5 text-slate-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <!-- Content -->
+          <div class="flex-1 overflow-auto bg-white">
+            <template v-if="isDoc">
+              <WordPreview :url="previewUrl" :fullScreen="true" />
+            </template>
+            <template v-else-if="isText">
+              <div class="w-full h-full overflow-auto p-6">
+                <pre class="whitespace-pre-wrap font-mono text-sm">{{ textContent }}</pre>
+              </div>
+            </template>
+            <template v-else>
+              <div class="w-full h-full flex flex-col items-center justify-center text-center gap-3 p-6">
+                <div>Preview not available for this file type.</div>
+                <a :href="previewUrl" target="_blank" class="underline text-blue-600 hover:text-blue-800">Open / Download</a>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </Teleport>
 </template>
