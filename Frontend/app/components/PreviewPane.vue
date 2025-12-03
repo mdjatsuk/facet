@@ -145,7 +145,7 @@ function toggleZoom() {
     <div class="flex items-center justify-between gap-2 p-2 border-b bg-white">
       <button @click="toggleZoom" class="px-3 py-1.5 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation" title="Fullscreen view">
         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6v4m12-4h4v4M6 18h4v4m6-4h4v4M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
         </svg>
       </button>
       <button @click="downloadPreview" class="px-3 py-1.5 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation">Download</button>
