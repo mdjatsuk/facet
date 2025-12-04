@@ -187,6 +187,44 @@ onMounted(() =>
   } catch (e) {
     policies.value = []
   }
+  
+  // Check if returning from sensitive detail page
+  const returnToDocId = sessionStorage.getItem('returnToDocId')
+  if (returnToDocId) {
+    sessionStorage.removeItem('returnToDocId')
+    
+    // Check if detected items were also stored
+    const storedDetected = sessionStorage.getItem('detectedItemsOnReturn')
+    if (storedDetected) {
+      try {
+        const parsed = JSON.parse(storedDetected)
+        const { docId: storedDocId, items } = parsed
+        
+        // Verify the data is fresh and matches the current docId
+        if (storedDocId === returnToDocId && items && Array.isArray(items) && items.length > 0) {
+          // Restore detected items
+          setDetected(returnToDocId, items)
+        }
+      } catch (e) {
+        console.error('Failed to parse detectedItemsOnReturn', e)
+      } finally {
+        // Always clean up, even if parsing failed
+        sessionStorage.removeItem('detectedItemsOnReturn')
+      }
+    }
+    
+    // Check if the document is already loaded and selected
+    if (selectedId.value === returnToDocId && docs.value.find(d => d.id === returnToDocId)) {
+      // Document is already selected, just restore detected items (already done above)
+      console.log('Document already selected, skipping refresh')
+      return
+    }
+    
+    // Refresh to get the document list and select the returned docId
+    refresh(returnToDocId)
+    return
+  }
+  
   const initialDocId = (route.query.docId as string) || undefined
   refresh(initialDocId)
 })
@@ -194,7 +232,66 @@ onMounted(() =>
 // Watch for route query changes (e.g., when returning from preview with new docId)
 watch(() => route.query.docId, (newDocId) => {
   if (newDocId) {
-    refresh(newDocId as string)
+    // Check if returning from sensitive detail page
+    const fromSensitive = route.query.fromSensitive === 'true'
+    
+    if (fromSensitive) {
+      // Clean up the query parameter
+      router.replace({ path: '/', query: {} })
+      
+      // Restore detected items if stored
+      const storedDetected = sessionStorage.getItem('detectedItemsOnReturn')
+      if (storedDetected) {
+        try {
+          const parsed = JSON.parse(storedDetected)
+          const { docId: storedDocId, items } = parsed
+          
+          if (storedDocId === newDocId && items && Array.isArray(items) && items.length > 0) {
+            setDetected(newDocId as string, items)
+          }
+        } catch (e) {
+          console.error('Failed to parse detectedItemsOnReturn', e)
+        } finally {
+          sessionStorage.removeItem('detectedItemsOnReturn')
+        }
+      }
+      
+      // Just ensure the document is selected (don't refresh)
+      if (selectedId.value !== newDocId) {
+        selectedId.value = newDocId as string
+      }
+      return
+    }
+    
+    // Check if there's a new redacted document in sessionStorage (from preview.vue)
+    const storedNewDoc = sessionStorage.getItem('newRedactedDoc')
+    if (storedNewDoc) {
+      try {
+        const { newDoc, detectedItems } = JSON.parse(storedNewDoc)
+        sessionStorage.removeItem('newRedactedDoc')
+        
+        // Add new doc to list if not already there
+        if (!docs.value.find(d => d.id === newDocId)) {
+          docs.value.unshift(newDoc)
+        }
+        
+        // Set detected items
+        if (detectedItems && detectedItems.length > 0) {
+          setDetected(newDocId as string, detectedItems)
+        }
+        
+        // Select the new document
+        selectedId.value = newDocId as string
+        console.log('Restored redacted doc from sessionStorage:', newDocId)
+      } catch (e) {
+        console.error('Failed to parse newRedactedDoc from sessionStorage', e)
+        sessionStorage.removeItem('newRedactedDoc')
+        refresh(newDocId as string)
+      }
+    } else {
+      // Normal refresh if no sessionStorage data
+      refresh(newDocId as string)
+    }
   }
 })
 
@@ -263,9 +360,6 @@ async function applySelected() {
   console.log('ApplySelected called for', targetId, 'values:', vals)
   if (!vals || vals.length === 0) { alert('No selections for the selected document'); return }
   
-  // Track if this was a staged document for redirect after apply
-  const wasStaged = stagedDoc.value?.id === targetId
-  
   try {
     const res = await post<any>(`documents/${targetId}/redact/save`, { values: vals })
     console.log('Redacted copy created', res)
@@ -273,46 +367,40 @@ async function applySelected() {
     const newDocId = newDoc?.id
     const detectedItems = res?.detected || res?.Detected || []
     
-    if (newDocId && newDoc) {
-      // Clear old document data and selections
-      clearDetected(targetId)
-      clear(targetId)
-      
-      // Set detected items for new redacted document
-      if (detectedItems.length > 0) {
-        setDetected(newDocId, detectedItems)
-      }
-      
-      // If this was a staged document, clear it immediately (this will also clear localStorage via watcher)
-      if (stagedDoc.value?.id === targetId) {
-        stagedDoc.value = null
-        // Explicitly remove from localStorage to ensure it's cleared
-        localStorage.removeItem(stagedDocKey.value)
-      }
-      
-      // For anonymous users, save the new document ID to localStorage
-      if (!isAuthenticated.value && newDocId) {
-        saveAnonDoc(newDocId)
-        // Remove the old staged document from anonymous docs
-        removeAnonDoc(targetId)
-      }
-      
-      // Refresh the documents list from server to get accurate state
-      await refresh(newDocId)
-      
-      console.log('Applied changes: new doc', newDocId, 'is now selected')
-      
-      // If this was a staged document on PC, just stay on home page with new doc selected
-      // The refresh(newDocId) above already sets the selectedId
-      if (wasStaged) {
-        // Don't redirect, just ensure we're on the home page
-        if (router.currentRoute.value.path !== '/') {
-          router.push('/')
-        }
-      }
-    } else {
-      await refresh()
+    if (!newDocId || !newDoc) {
+      throw new Error('No document ID returned from server')
     }
+    
+    // Clear old document data and selections
+    clearDetected(targetId)
+    clear(targetId)
+    
+    // Set detected items for new redacted document
+    if (detectedItems.length > 0) {
+      setDetected(newDocId, detectedItems)
+    }
+    
+    // Add the new document to the docs list immediately
+    if (!docs.value.find(d => d.id === newDocId)) {
+      docs.value.unshift(newDoc)
+    }
+    
+    // If this was a staged document, clear it immediately
+    if (stagedDoc.value?.id === targetId) {
+      stagedDoc.value = null
+      localStorage.removeItem(stagedDocKey.value)
+    }
+    
+    // For anonymous users, save the new document ID to localStorage
+    if (!isAuthenticated.value && newDocId) {
+      saveAnonDoc(newDocId)
+      removeAnonDoc(targetId)
+    }
+    
+    // Select the new document
+    selectedId.value = newDocId
+    
+    console.log('Applied changes: new doc', newDocId, 'is now selected')
   }
   catch (e: any) {
     console.error('Save redact failed', e)
@@ -429,11 +517,14 @@ async function discardStaged() {
         <UploadDrop @uploaded="onUploaded" />
         <SensitiveDataBox :types="uniqueTypes" :doc-id="stagedDoc?.id || selectedId" :custom-types="customTypes" />
         <CustomPatternSearch :doc-id="stagedDoc?.id || selectedId" @pattern-found="onPatternFound" />
-        <div class="mt-2 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-          <button @click="applySelected" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 active:bg-blue-800 touch-manipulation text-sm sm:text-base" :disabled="!(stagedDoc?.id || selectedId) || selectedCount === 0">
+        <div class="mt-2 flex flex-row gap-2 items-center">
+          <button @click="applySelected" class="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 touch-manipulation text-sm font-bold whitespace-nowrap" :disabled="!(stagedDoc?.id || selectedId) || selectedCount === 0">
             Apply Changes
           </button>
-          <div class="text-xs sm:text-sm text-slate-600 text-center sm:text-left">Selected: {{ selectedCount }}</div>
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
+            <span class="inline-flex items-center justify-center w-5 h-5 bg-blue-600 text-white rounded-full text-xs font-bold">{{ selectedCount }}</span>
+            <span>Selected</span>
+          </div>
         </div>
       </section>
 
