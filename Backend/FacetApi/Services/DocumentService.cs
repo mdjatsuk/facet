@@ -630,7 +630,8 @@ public class DocumentService : IDocumentService
             return new string('*', value.Length);
         }
 
-        return new string('*', Math.Min(10, value.Length));
+        // For all other cases (including custom patterns), use full asterisk masking
+        return new string('*', value.Length);
     }
 
 }

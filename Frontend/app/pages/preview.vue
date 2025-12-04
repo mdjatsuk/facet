@@ -70,8 +70,14 @@ async function applyChanges() {
       localStorage.removeItem(stagedDocKey)
     }
     
-    // Get the new document ID
-    const newDocId = res?.document?.id || res?.Document?.id
+    // Get the new document ID and details
+    const newDoc = res?.document || res?.Document
+    const newDocId = newDoc?.id
+    const detectedItems = res?.detected || res?.Detected || []
+    
+    if (!newDocId) {
+      throw new Error('No document ID returned from server')
+    }
     
     // For anonymous users, save the new document ID to localStorage
     const { isAuthenticated } = useAuth()
@@ -87,12 +93,11 @@ async function applyChanges() {
       localStorage.setItem(anonDocsKey, JSON.stringify(filtered))
     }
     
-    // Navigate to preview page to view the redacted document
-    if (newDocId) {
-      router.push({ path: '/preview', query: { docId: newDocId } })
-    } else {
-      router.push('/preview')
-    }
+    // Store the new doc and detected items in sessionStorage to pass to home page
+    sessionStorage.setItem('newRedactedDoc', JSON.stringify({ newDoc, detectedItems }))
+    
+    // Navigate back to home page with the new document selected
+    router.push({ path: '/', query: { docId: newDocId } })
   } catch (e: any) {
     console.error('Save redact failed', e)
     const errorMsg = e?.data?.message || e?.message || 'Failed to create redacted copy. Please check if you have selected items to redact.'
