@@ -188,7 +188,49 @@ onMounted(() =>
     policies.value = []
   }
   
-  // Check if returning from sensitive detail page
+  // Check if returning from sensitive detail page via query parameter
+  const initialDocId = (route.query.docId as string) || undefined
+  const fromSensitive = route.query.fromSensitive === 'true'
+  
+  if (fromSensitive && initialDocId) {
+    console.log('[onMounted] Returning from sensitive page with docId:', initialDocId)
+    
+    // Restore detected items if stored
+    const storedDetected = sessionStorage.getItem('detectedItemsOnReturn')
+    if (storedDetected) {
+      try {
+        const parsed = JSON.parse(storedDetected)
+        const { docId: storedDocId, items } = parsed
+        
+        if (storedDocId === initialDocId && items && Array.isArray(items) && items.length > 0) {
+          setDetected(initialDocId, items)
+          console.log('[onMounted] Restored detected items:', items.length)
+        }
+      } catch (e) {
+        console.error('Failed to parse detectedItemsOnReturn', e)
+      } finally {
+        sessionStorage.removeItem('detectedItemsOnReturn')
+      }
+    }
+    
+    // Load the specific document immediately
+    get<Document>(`documents/${initialDocId}`).then(doc => {
+      if (doc) {
+        console.log('[onMounted] Loaded document:', doc.fileName)
+        docs.value = [doc]
+        selectedId.value = initialDocId
+        // Clean up query parameter
+        router.replace({ path: '/', query: {} })
+      }
+    }).catch(e => {
+      console.error('[onMounted] Failed to load document:', e)
+      refresh(initialDocId)
+    })
+    
+    return
+  }
+  
+  // Check if returning from sensitive detail page via sessionStorage (old method)
   const returnToDocId = sessionStorage.getItem('returnToDocId')
   if (returnToDocId) {
     sessionStorage.removeItem('returnToDocId')
@@ -225,20 +267,20 @@ onMounted(() =>
     return
   }
   
-  const initialDocId = (route.query.docId as string) || undefined
-  refresh(initialDocId)
+  // If not returning from sensitive page, do normal refresh
+  if (!fromSensitive) {
+    const fallbackDocId = (route.query.docId as string) || undefined
+    refresh(fallbackDocId)
+  }
 })
 
 // Watch for route query changes (e.g., when returning from preview with new docId)
-watch(() => route.query.docId, (newDocId) => {
+watch(() => route.query.docId, async (newDocId) => {
   if (newDocId) {
     // Check if returning from sensitive detail page
     const fromSensitive = route.query.fromSensitive === 'true'
     
     if (fromSensitive) {
-      // Clean up the query parameter
-      router.replace({ path: '/', query: {} })
-      
       // Restore detected items if stored
       const storedDetected = sessionStorage.getItem('detectedItemsOnReturn')
       if (storedDetected) {
@@ -256,10 +298,25 @@ watch(() => route.query.docId, (newDocId) => {
         }
       }
       
-      // Just ensure the document is selected (don't refresh)
+      // Load the document if it's not in the docs array
+      if (!docs.value.find(d => d.id === newDocId)) {
+        try {
+          const doc = await get<Document>(`documents/${newDocId}`)
+          if (doc && !docs.value.find(d => d.id === newDocId)) {
+            docs.value.unshift(doc)
+          }
+        } catch (e) {
+          console.error('Failed to load document:', e)
+        }
+      }
+      
+      // Ensure the document is selected
       if (selectedId.value !== newDocId) {
         selectedId.value = newDocId as string
       }
+      
+      // Clean up the query parameter AFTER setting selectedId
+      router.replace({ path: '/', query: {} })
       return
     }
     
@@ -384,6 +441,9 @@ async function applySelected() {
     if (!docs.value.find(d => d.id === newDocId)) {
       docs.value.unshift(newDoc)
     }
+    
+    // Remove the old document from docs list (backend deletes it)
+    docs.value = docs.value.filter(d => d.id !== targetId)
     
     // If this was a staged document, clear it immediately
     if (stagedDoc.value?.id === targetId) {
