@@ -99,10 +99,10 @@ async function refresh(selectNewId?: string) {
   if (selectNewId) {
     selectedId.value = selectNewId
   } else if (!selectedId.value && docs.value.length > 0) {
-    selectedId.value = docs.value[0]?.id || null
-  } else if (selectedId.value && !docs.value.some(d => d.id === selectedId.value) && docs.value.length > 0) {
+    // Only set to first doc if no selectedId is currently set
     selectedId.value = docs.value[0]?.id || null
   }
+  // Don't override selectedId if it's already set and found in docs
 }
 
 function viewPolicy(id: string) {
@@ -130,8 +130,16 @@ function onUploaded(payload: { document: Document, detected?: SensitiveItem[] })
   console.log('Detected for doc:', payload.document.id, payload.detected)
 }
 
-watch(selectedId, () => {
+const selectedIdKey = computed(() => `selectedId_${currentUsername.value ?? 'anon'}`)
+
+// Persist selectedId to localStorage
+watch(selectedId, (newVal) => {
   console.log('Selected doc changed to:', selectedId.value)
+  if (newVal) {
+    localStorage.setItem(selectedIdKey.value, newVal)
+  } else {
+    localStorage.removeItem(selectedIdKey.value)
+  }
 })
 
 // Scope stagedDoc and policies in localStorage per-user so different accounts don't see each other's data
@@ -186,6 +194,13 @@ onMounted(() =>
     policies.value = JSON.parse(localStorage.getItem(policiesKey.value) || '[]')
   } catch (e) {
     policies.value = []
+  }
+  
+  // Restore selectedId from localStorage first, before any refresh
+  const savedSelectedId = localStorage.getItem(selectedIdKey.value)
+  if (savedSelectedId) {
+    selectedId.value = savedSelectedId
+    console.log('[onMounted] Restored selectedId from localStorage:', savedSelectedId)
   }
   
   // Check if returning from sensitive detail page via query parameter
@@ -271,6 +286,25 @@ onMounted(() =>
   if (!fromSensitive) {
     const fallbackDocId = (route.query.docId as string) || undefined
     refresh(fallbackDocId)
+    // After refresh, verify that selectedId is still valid
+    // If it's set but document not found, it will be reset by refresh()
+    // But we want to keep it if document exists
+    if (selectedId.value && docs.value.length >= 0) {
+      if (!docs.value.some(d => d.id === selectedId.value)) {
+        // Document not found in list, try to load it from server
+        console.log('[onMounted] selectedId document not in list, loading from server:', selectedId.value)
+        get<Document>(`documents/${selectedId.value}`)
+          .then(doc => {
+            if (doc) {
+              docs.value.unshift(doc)
+              console.log('[onMounted] Loaded missing document:', selectedId.value)
+            }
+          })
+          .catch(e => {
+            console.error('[onMounted] Failed to load document:', selectedId.value, e)
+          })
+      }
+    }
   }
 })
 
@@ -358,6 +392,13 @@ watch(currentUsername, () => {
     policies.value = JSON.parse(localStorage.getItem(policiesKey.value) || '[]')
   } catch (e) {
     policies.value = []
+  }
+  
+  // Also restore selectedId when username changes
+  const savedSelectedId = localStorage.getItem(selectedIdKey.value)
+  if (savedSelectedId) {
+    selectedId.value = savedSelectedId
+    console.log('[currentUsername watch] Restored selectedId:', savedSelectedId)
   }
 })
 
