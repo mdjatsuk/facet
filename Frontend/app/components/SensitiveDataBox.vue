@@ -25,15 +25,20 @@
               v-for="t in allTypes"
               :key="t"
               :to="linkFor(t)"
-              class="flex items-center justify-between w-full gap-2 px-3 py-2 sm:py-1.5 bg-slate-50 text-primary dark:bg-slate-800 dark:text-slate-200 rounded-full text-sm hover:shadow hover:bg-primary/10 hover:text-primary dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary/30 active:scale-95 touch-manipulation"
+              :class="[
+                'flex items-center justify-between w-full gap-2 px-3 py-2 sm:py-1.5 rounded-full text-sm transition-colors duration-150 focus:outline-none focus:ring-2 active:scale-95 touch-manipulation',
+                t.startsWith('Custom:') 
+                  ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:shadow-lg hover:from-violet-600 hover:to-purple-600 focus:ring-violet-300'
+                  : 'bg-slate-50 text-primary dark:bg-slate-800 dark:text-slate-200 hover:shadow hover:bg-primary/10 hover:text-primary dark:hover:bg-slate-700 dark:hover:text-slate-100 focus:ring-primary/30'
+              ]"
             >
               <div class="flex items-center gap-2 min-w-0">
-                <svg class="w-4 h-4 text-primary flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <svg :class="t.startsWith('Custom:') ? 'w-4 h-4 text-white flex-shrink-0' : 'w-4 h-4 text-primary flex-shrink-0'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.38-1.12-2.5-2.5-2.5S7 9.62 7 11s1.12 2.5 2.5 2.5S12 12.38 12 11z" />
                 </svg>
-                <span class="truncate flex-1 min-w-0 capitalize">{{ t }}</span>
+                <span class="truncate flex-1 min-w-0" :class="{ 'capitalize': !t.startsWith('Custom:') }">{{ t }}</span>
               </div>
-              <svg class="w-3 h-3 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <svg :class="t.startsWith('Custom:') ? 'w-3 h-3 text-white flex-shrink-0' : 'w-3 h-3 text-slate-400 flex-shrink-0'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </NuxtLink>

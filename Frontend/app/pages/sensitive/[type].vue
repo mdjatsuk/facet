@@ -46,16 +46,24 @@ onMounted(() => {
 })
 
 function applyAndBack() {
-  // Return to home page on PC, or sensitive-data page on mobile
-  // Check if coming from sensitive-data page (mobile workflow)
-  const referrer = route.query.from as string
-  if (referrer === 'sensitive-data') {
-    // Mobile workflow: return to sensitive-data page
-    router.push({ path: '/sensitive-data', query: { docId: docId.value, staged: isStaged.value ? 'true' : undefined } })
-  } else {
-    // PC workflow: just return to home page without query params
-    router.push({ path: '/' })
+  // Clear any old sessionStorage data first to avoid conflicts
+  sessionStorage.removeItem('detectedItemsOnReturn')
+  
+  // Store the current docId and detected items so they persist on return
+  if (docId.value) {
+    // Also store the detected items in case they were modified by custom pattern search
+    const detected = getDetected(docId.value)
+    if (detected && detected.length > 0) {
+      sessionStorage.setItem('detectedItemsOnReturn', JSON.stringify({
+        docId: docId.value,
+        items: detected,
+        timestamp: Date.now()  // Add timestamp to prevent stale data issues
+      }))
+    }
   }
+  
+  // Navigate back to home with the docId as query parameter to prevent remounting
+  router.push({ path: '/', query: { docId: docId.value, fromSensitive: 'true' } })
 }
 </script>
 
@@ -81,7 +89,8 @@ function applyAndBack() {
           />
           <span class="font-mono text-sm break-all">{{ item.value }}</span>
 
-          <span class="text-xs text-slate-400 ml-2">({{ item.indexStart }}–{{ item.indexEnd }})</span>
+          <span v-if="item.indexStart >= 0" class="text-xs text-slate-400 ml-2">({{ item.indexStart }}–{{ item.indexEnd }})</span>
+          <span v-else class="text-xs text-slate-400 ml-2">(custom match)</span>
   </li>
       </ul>
 

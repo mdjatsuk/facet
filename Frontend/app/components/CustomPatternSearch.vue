@@ -30,7 +30,10 @@
             {{ isScanning ? 'Scanning...' : 'Search' }}
           </button>
           <div v-if="scanError" class="text-xs text-red-600 px-1">{{ scanError }}</div>
-          <div v-if="scanSuccess" class="text-xs text-green-600 px-1">{{ scanSuccess }}</div>
+          <div v-if="scanSuccess" class="text-xs text-green-600 px-1">
+            {{ scanSuccess }}
+            <div class="text-xs text-slate-500 mt-1">Note: Custom patterns search by value and will be applied to all occurrences in the document.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -86,20 +89,37 @@ async function scanCustomPattern() {
       if (item.value && item.value.toLowerCase().includes(pattern.toLowerCase())) {
         // Found an existing item that contains the pattern
         matchingItems.push({
-          type: `custom:${pattern}`,
+          type: `Custom: "${pattern}"`,
           value: item.value,  // Use the full value, not just the pattern
-          indexStart: item.indexStart,
-          indexEnd: item.indexEnd
+          // For custom patterns, always use -1 to indicate value-based matching
+          indexStart: -1,
+          indexEnd: -1
         })
       }
     }
     
     // If we found matches in existing items, use those
     if (matchingItems.length > 0) {
-      const merged = [...existing, ...matchingItems]
+      // Don't add duplicates - only add the new custom type entries
+      // Filter out existing entries that match the custom pattern matches
+      const filtered = existing.filter(item => {
+        // Keep items that don't match this pattern, or items that already have the custom type for this pattern
+        const matches = matchingItems.some(match => match.value === item.value)
+        const isAlreadyCustomType = item.type === `Custom: "${pattern}"`
+        return !matches || isAlreadyCustomType
+      })
+      
+      // Also remove any duplicate custom type entries for this pattern
+      const deduped = filtered.filter((item, idx, arr) => {
+        if (item.type !== `Custom: "${pattern}"`) return true
+        // For custom types, only keep the first occurrence of each value
+        return arr.findIndex(i => i.type === `Custom: "${pattern}"` && i.value === item.value) === idx
+      })
+      
+      const merged = [...deduped, ...matchingItems]
       setDetected(docId.value, merged)
 
-      const customType = `custom:${pattern}`
+      const customType = `Custom: "${pattern}"`
       emit('patternFound', customType)
 
       scanSuccess.value = `Found ${matchingItems.length} match(es) for "${pattern}"`
@@ -148,32 +168,44 @@ async function scanCustomPattern() {
     }
 
     // Search for words/tokens containing the pattern
-    const lowerText = textContent.toLowerCase()
     const lowerPattern = pattern.toLowerCase()
     
-    // Use regex to find whole words/tokens that contain the pattern
-    // Match sequences of non-whitespace characters that contain the pattern
-    const wordBoundaryRegex = /\S+/g
+    // Split text into lines to avoid matching across paragraphs/line breaks
+    const lines = textContent.split(/\r?\n/)
+    
+    // Match alphanumeric words only (excluding symbols like :, !, etc.)
+    const wordBoundaryRegex = /\b[\w]+\b/g
     const matches: SensitiveItem[] = []
     const seen = new Set<string>()
     
-    let match
-    while ((match = wordBoundaryRegex.exec(textContent)) !== null) {
-      const word = match[0]
-      const wordLower = word.toLowerCase()
+    let currentIndex = 0
+    for (const line of lines) {
+      const lineLower = line.toLowerCase()
       
-      if (wordLower.includes(lowerPattern)) {
-        // Avoid duplicates
-        if (!seen.has(word)) {
-          seen.add(word)
-          matches.push({
-            type: `custom:${pattern}`,
-            value: word,
-            indexStart: match.index,
-            indexEnd: match.index + word.length
-          })
+      let match
+      wordBoundaryRegex.lastIndex = 0 // Reset regex
+      while ((match = wordBoundaryRegex.exec(line)) !== null) {
+        const word = match[0]
+        const wordLower = word.toLowerCase()
+        
+        if (wordLower.includes(lowerPattern)) {
+          // Avoid duplicates
+          if (!seen.has(word)) {
+            seen.add(word)
+            matches.push({
+              type: `Custom: "${pattern}"`,
+              value: word,
+              // For custom patterns found by text search, use -1 to indicate these are text-based matches
+              // The backend should handle custom pattern types specially
+              indexStart: -1,
+              indexEnd: -1
+            })
+          }
         }
       }
+      
+      // Move index forward by line length + newline character(s)
+      currentIndex += line.length + 1
     }
 
     if (matches.length > 0) {
@@ -182,7 +214,7 @@ async function scanCustomPattern() {
       setDetected(docId.value, merged)
 
       // Emit event to notify parent about new type
-      const customType = `custom:${pattern}`
+      const customType = `Custom: "${pattern}"`
       emit('patternFound', customType)
 
       scanSuccess.value = `Found ${matches.length} match(es) for "${pattern}"`
