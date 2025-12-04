@@ -615,8 +615,9 @@ public class DocumentService : IDocumentService
             return new string('*', Math.Min(6, value.Length));
         }
 
-        if (System.Text.RegularExpressions.Regex.IsMatch(value, "^[A-Za-z]{2}[A-Za-z0-9]{6,}$"))
+        if (System.Text.RegularExpressions.Regex.IsMatch(value, "^[A-Z]{2}\\d{2}[A-Za-z0-9]{10,}$"))
         {
+            // IBAN-like pattern: 2 uppercase letters + 2 digits + alphanumeric
             var len = value.Length;
             if (len <= 6) return new string('*', len);
             var first = value.Substring(0, 2);
