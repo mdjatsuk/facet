@@ -15,9 +15,9 @@ export default defineNuxtConfig({
     head: { 
       title: 'FACET', 
       meta: [
-        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
-        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
         { name: 'apple-mobile-web-app-title', content: 'FACET' },
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'mobile-web-app-capable', content: 'yes' },
@@ -26,7 +26,13 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'apple-touch-icon', href: '/favicon.svg' }
-      ] 
+      ],
+      htmlAttrs: {
+        lang: 'en'
+      },
+      bodyAttrs: {
+        class: 'antialiased'
+      }
     } 
   },
   css: ['@/assets/css/tailwind.css'],
