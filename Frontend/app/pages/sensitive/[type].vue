@@ -25,6 +25,8 @@ const { toggle, isSelected, toggleAll, getValues } = useSelection()
 
 const selectedValues = computed(() => getValues(docId.value))
 
+const fromPage = computed(() => (route.query.from as string) || 'home')
+
 const allSelected = computed(() => {
   const items = itemsForType.value || []
   if (items.length === 0) return false
@@ -62,8 +64,13 @@ function applyAndBack() {
     }
   }
   
-  // Navigate back to home with the docId as query parameter to prevent remounting
-  router.push({ path: '/', query: { docId: docId.value, fromSensitive: 'true' } })
+  // Navigate back to sensitive-data page if that's where we came from (mobile)
+  if (fromPage.value === 'sensitive-data') {
+    router.push({ path: '/sensitive-data', query: { docId: docId.value, staged: isStaged.value ? 'true' : undefined } })
+  } else {
+    // Default: navigate to home with docId (desktop)
+    router.push({ path: '/', query: { docId: docId.value, fromSensitive: 'true' } })
+  }
 }
 </script>
 

@@ -196,16 +196,23 @@ onMounted(() =>
     policies.value = []
   }
   
-  // Restore selectedId from localStorage first, before any refresh
-  const savedSelectedId = localStorage.getItem(selectedIdKey.value)
-  if (savedSelectedId) {
-    selectedId.value = savedSelectedId
-    console.log('[onMounted] Restored selectedId from localStorage:', savedSelectedId)
-  }
-  
-  // Check if returning from sensitive detail page via query parameter
+  // Check if we have docId in query (e.g., after redacting on mobile)
   const initialDocId = (route.query.docId as string) || undefined
   const fromSensitive = route.query.fromSensitive === 'true'
+  
+  // Special handling for direct docId navigation (mobile redact flow only)
+  // Only use query docId if we're clearly coming from mobile (no fromSensitive flag)
+  if (initialDocId && !fromSensitive && !docs.value.length) {
+    console.log('[onMounted] Direct docId in query (mobile):', initialDocId)
+    selectedId.value = initialDocId
+  } else {
+    // Restore selectedId from localStorage (normal flow)
+    const savedSelectedId = localStorage.getItem(selectedIdKey.value)
+    if (savedSelectedId) {
+      selectedId.value = savedSelectedId
+      console.log('[onMounted] Restored selectedId from localStorage:', savedSelectedId)
+    }
+  }
   
   if (fromSensitive && initialDocId) {
     console.log('[onMounted] Returning from sensitive page with docId:', initialDocId)
@@ -302,6 +309,12 @@ onMounted(() =>
           })
           .catch(e => {
             console.error('[onMounted] Failed to load document:', selectedId.value, e)
+            // Document doesn't exist on server, clear it from localStorage
+            if (e?.response?.status === 404 || e?.data?.includes('404')) {
+              console.log('[onMounted] Document deleted, clearing from localStorage')
+              localStorage.removeItem(selectedIdKey.value)
+              selectedId.value = docs.value[0]?.id || null
+            }
           })
       }
     }
@@ -490,6 +503,11 @@ async function applySelected() {
     if (stagedDoc.value?.id === targetId) {
       stagedDoc.value = null
       localStorage.removeItem(stagedDocKey.value)
+    }
+    
+    // Clear the old document from localStorage if it was the selected one
+    if (selectedIdKey.value && localStorage.getItem(selectedIdKey.value) === targetId) {
+      localStorage.removeItem(selectedIdKey.value)
     }
     
     // For anonymous users, save the new document ID to localStorage
