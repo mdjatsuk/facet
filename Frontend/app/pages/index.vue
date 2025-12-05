@@ -205,6 +205,23 @@ onMounted(() =>
   if (initialDocId && !fromSensitive && !docs.value.length) {
     console.log('[onMounted] Direct docId in query (mobile):', initialDocId)
     selectedId.value = initialDocId
+    
+    // Load the new document and preserve detected items set by sensitive-data.vue
+    get<Document>(`documents/${initialDocId}`).then(doc => {
+      if (doc) {
+        console.log('[onMounted] Loaded redacted document:', doc.fileName)
+        docs.value = [doc]
+        selectedId.value = initialDocId
+        // The detected items should already be in state from sensitive-data.vue
+        // Clean up query parameter
+        router.replace({ path: '/', query: {} })
+      }
+    }).catch(e => {
+      console.error('[onMounted] Failed to load document:', initialDocId, e)
+      refresh(initialDocId)
+    })
+    
+    return
   } else {
     // Restore selectedId from localStorage (normal flow)
     const savedSelectedId = localStorage.getItem(selectedIdKey.value)
@@ -367,26 +384,31 @@ watch(() => route.query.docId, async (newDocId) => {
       return
     }
     
-    // Check if there's a new redacted document in sessionStorage (from preview.vue)
+    // Check if there's a new redacted document in sessionStorage (from preview.vue or sensitive-data.vue)
     const storedNewDoc = sessionStorage.getItem('newRedactedDoc')
     if (storedNewDoc) {
       try {
         const { newDoc, detectedItems } = JSON.parse(storedNewDoc)
         sessionStorage.removeItem('newRedactedDoc')
         
+        const parsedDocId = newDoc?.id
+        if (!parsedDocId) {
+          throw new Error('No document ID in newRedactedDoc')
+        }
+        
         // Add new doc to list if not already there
-        if (!docs.value.find(d => d.id === newDocId)) {
+        if (!docs.value.find(d => d.id === parsedDocId)) {
           docs.value.unshift(newDoc)
         }
         
         // Set detected items
         if (detectedItems && detectedItems.length > 0) {
-          setDetected(newDocId as string, detectedItems)
+          setDetected(parsedDocId, detectedItems)
         }
         
         // Select the new document
-        selectedId.value = newDocId as string
-        console.log('Restored redacted doc from sessionStorage:', newDocId)
+        selectedId.value = parsedDocId
+        console.log('Restored redacted doc from sessionStorage:', parsedDocId)
       } catch (e) {
         console.error('Failed to parse newRedactedDoc from sessionStorage', e)
         sessionStorage.removeItem('newRedactedDoc')
