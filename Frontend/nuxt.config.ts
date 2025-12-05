@@ -11,6 +11,18 @@ export default defineNuxtConfig({
   // Normalize so the value always is either empty or an absolute URL starting with http(s)
   runtimeConfig: { public: { apiBase } },
   modules: ['@pinia/nuxt'],
+    nitro: {
+      compressPublicAssets: true,
+      routeRules: {
+        '/**': { 
+          headers: { 
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'DENY'
+          } 
+        }
+      }
+    },
   app: { 
     head: { 
       title: 'FACET', 
