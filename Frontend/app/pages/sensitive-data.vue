@@ -58,11 +58,11 @@ async function applyChanges() {
       localStorage.setItem(anonDocsKey, JSON.stringify(filtered))
     }
     
-    // Navigate to preview page with the new document
+    // Navigate back to main page with the new document selected (for mobile)
     if (newDocId) {
-      router.push({ path: '/preview', query: { docId: newDocId } })
+      router.push({ path: '/', query: { docId: newDocId } })
     } else {
-      router.push('/preview')
+      router.push('/')
     }
   } catch (e: any) {
     console.error('Save redact failed', e)
