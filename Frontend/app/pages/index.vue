@@ -150,9 +150,9 @@ const { locale } = useI18n()
 
 const showLanguageMenu = ref(false)
 const languageList = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-  { code: 'est', name: 'Eesti', flag: '🇪🇪' }
+  { code: 'en', short: 'Eng', name: 'English' },
+  { code: 'ru', short: 'Рус', name: 'Русский' },
+  { code: 'est', short: 'Est', name: 'Eesti' }
 ]
 
 const changeLanguage = (code: string) => {
@@ -667,7 +667,7 @@ async function discardStaged() {
                 class="w-full text-left px-4 py-2 text-sm transition-colors hover:bg-slate-100"
                 :class="{ 'bg-blue-50 text-blue-700 font-medium': locale === lang.code }"
               >
-                <span class="mr-2">{{ lang.flag }}</span>
+                <span class="font-semibold mr-2">{{ lang.short }}</span>
                 <span>{{ lang.name }}</span>
               </button>
             </div>

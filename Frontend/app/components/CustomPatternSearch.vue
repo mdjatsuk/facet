@@ -32,7 +32,7 @@
           <div v-if="scanError" class="text-xs text-red-600 px-1">{{ scanError }}</div>
           <div v-if="scanSuccess" class="text-xs text-green-600 px-1">
             {{ scanSuccess }}
-            <div class="text-xs text-slate-500 mt-1">Note: Custom patterns search by value and will be applied to all occurrences in the document.</div>
+            <div class="text-xs text-slate-500 mt-1">{{ $t('customPattern.note') }}</div>
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@ async function scanCustomPattern() {
       const customType = `Custom: "${pattern}"`
       emit('patternFound', customType)
 
-      scanSuccess.value = `Found ${matchingItems.length} match(es) for "${pattern}"`
+      scanSuccess.value = t('customPattern.foundMatches', { count: matchingItems.length, pattern })
       customPattern.value = ''
       setTimeout(() => scanSuccess.value = '', 3000)
       return
@@ -207,7 +207,7 @@ async function scanCustomPattern() {
         }
       }
       
-      // Move index forward by line length + newline character(s)
+      // Move index forward to avoid matching the same line again
       currentIndex += line.length + 1
     }
 
@@ -220,11 +220,11 @@ async function scanCustomPattern() {
       const customType = `Custom: "${pattern}"`
       emit('patternFound', customType)
 
-      scanSuccess.value = `Found ${matches.length} match(es) for "${pattern}"`
+      scanSuccess.value = t('customPattern.foundMatches', { count: matches.length, pattern })
       customPattern.value = ''
       setTimeout(() => scanSuccess.value = '', 3000)
     } else {
-      scanError.value = `No matches found for "${pattern}"`
+      scanError.value = t('customPattern.noMatches', { pattern })
       setTimeout(() => scanError.value = '', 3000)
     }
 

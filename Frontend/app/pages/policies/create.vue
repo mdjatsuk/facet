@@ -28,33 +28,41 @@ const options = ref<Record<string, boolean>>({
 const saving = ref(false)
 const message = ref<string | null>(null)
 
+function isAnySensitiveSelected() {
+  return Object.values(options.value).some(Boolean);
+}
+
 async function submit() {
   if (!name.value.trim()) {
-    message.value = 'Please enter a Policy Name before creating.'
-    return
+    message.value = 'Please enter a Policy Name before creating.';
+    return;
   }
-  saving.value = true
-  message.value = null
+  if (!isAnySensitiveSelected()) {
+    message.value = 'Please select at least one sensitive data type.';
+    return;
+  }
+  saving.value = true;
+  message.value = null;
   try {
     const newPolicy = {
       id: Date.now().toString(),
       name: name.value,
       options: { ...options.value }
-    }
+    };
 
-    const { currentUsername } = useAuth()
-    const key = `policies_${currentUsername.value ?? 'anon'}`
-    const saved = JSON.parse(localStorage.getItem(key) || '[]')
+    const { currentUsername } = useAuth();
+    const key = `policies_${currentUsername.value ?? 'anon'}`;
+    const saved = JSON.parse(localStorage.getItem(key) || '[]');
 
-    saved.push(newPolicy)
+    saved.push(newPolicy);
 
-    localStorage.setItem(key, JSON.stringify(saved))
+    localStorage.setItem(key, JSON.stringify(saved));
 
-    await router.push({ path: '/', query: { notice: 'policy-created' } })
-  } catch (err: any) {
-    message.value = err?.message || String(err)
+    await router.push({ path: '/', query: { notice: 'policy-created' } });
+  } catch (err) {
+    message.value = err?.message || String(err);
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 </script>
@@ -108,7 +116,7 @@ async function submit() {
       </div>
 
       <div class="flex items-center gap-3">
-        <button @click="submit" :disabled="saving" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">{{ saving ? 'Saving...' : $t('policies.create.createButton') }}</button>
+        <button @click="submit" :disabled="saving || !isAnySensitiveSelected()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">{{ saving ? 'Saving...' : $t('policies.create.createButton') }}</button>
         <NuxtLink to="/" class="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg">{{ $t('policies.create.backButton') }}</NuxtLink>
       </div>
 
