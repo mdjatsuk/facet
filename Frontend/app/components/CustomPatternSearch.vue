@@ -6,8 +6,8 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <div>
-          <div class="text-sm sm:text-base font-semibold">Custom Pattern Search</div>
-          <div class="text-xs text-slate-400">Search for custom patterns</div>
+          <div class="text-sm sm:text-base font-semibold">{{ $t('customPattern.title') }}</div>
+          <div class="text-xs text-slate-400">{{ $t('customPattern.description') }}</div>
         </div>
       </div>
     </div>
@@ -18,7 +18,7 @@
           <input
             v-model="customPattern"
             type="text"
-            placeholder="Enter pattern to search..."
+            :placeholder="$t('customPattern.placeholder')"
             class="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             @keyup.enter="scanCustomPattern"
           />
@@ -27,7 +27,7 @@
             :disabled="!customPattern.trim() || isScanning"
             class="w-full px-4 py-2 bg-primary text-white rounded text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
           >
-            {{ isScanning ? 'Scanning...' : 'Search' }}
+            {{ isScanning ? 'Scanning...' : $t('customPattern.button') }}
           </button>
           <div v-if="scanError" class="text-xs text-red-600 px-1">{{ scanError }}</div>
           <div v-if="scanSuccess" class="text-xs text-green-600 px-1">
@@ -42,7 +42,10 @@
 
 <script setup lang="ts">
 import { ref, toRef, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { SensitiveItem } from '~/types'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   docId?: string | null

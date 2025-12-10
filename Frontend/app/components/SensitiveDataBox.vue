@@ -6,8 +6,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.38-1.12-2.5-2.5-2.5S7 9.62 7 11s1.12 2.5 2.5 2.5S12 12.38 12 11zM12 3v2m0 14v2m8.66-9h-2M5.34 12H3m15.36 6.36l-1.42-1.42M7.06 7.06 5.64 5.64m12.02 0-1.42 1.42M7.06 16.94 5.64 18.36" />
           </svg>
           <div class="min-w-0">
-            <div class="text-sm sm:text-base font-semibold truncate">Sensitive Data</div>
-            <div class="text-xs text-slate-400 truncate">Detected types — <span class="font-medium text-slate-700">{{ allTypes.length }}</span></div>
+            <div class="text-sm sm:text-base font-semibold whitespace-normal leading-snug">{{ $t('sensitiveData.title') }}</div>
+            <div class="text-xs text-slate-400 truncate">{{ $t('sensitiveData.detectedTypes') }} — <span class="font-medium text-slate-700">{{ allTypes.length }}</span></div>
           </div>
         </div>
         
@@ -15,7 +15,7 @@
 
       <div class="listbox-body">
         <div v-if="allTypes.length === 0" class="text-gray-500 p-4 sm:p-6 text-center text-sm">
-          No sensitive data found.
+          {{ $t('sensitiveData.noData') }}
         </div>
 
         <div v-else class="px-2 sm:px-3 py-3 sm:py-4">
@@ -36,7 +36,7 @@
                 <svg :class="t.startsWith('Custom:') ? 'w-4 h-4 text-white flex-shrink-0' : 'w-4 h-4 text-primary flex-shrink-0'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.38-1.12-2.5-2.5-2.5S7 9.62 7 11s1.12 2.5 2.5 2.5S12 12.38 12 11z" />
                 </svg>
-                <span class="truncate flex-1 min-w-0" :class="{ 'capitalize': !t.startsWith('Custom:') }">{{ t }}</span>
+                <span class="truncate flex-1 min-w-0" :class="{ 'capitalize': !t.startsWith('Custom:') }">{{ getTypeLabel(t) }}</span>
               </div>
               <svg :class="t.startsWith('Custom:') ? 'w-3 h-3 text-white flex-shrink-0' : 'w-3 h-3 text-slate-400 flex-shrink-0'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -50,6 +50,9 @@
 
 <script setup lang="ts">
 import { toRef, computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   types: string[]  
@@ -75,7 +78,16 @@ const allTypes = computed(() => {
   return combined.sort()
 })
 
-function linkFor(t: string) {
-  return { path: `/sensitive/${encodeURIComponent(t)}`, query: { docId: docId.value || undefined, staged: isStaged.value ? 'true' : undefined, from: from.value || undefined } }
+const getTypeLabel = (typeCode: string): string => {
+  if (typeCode.startsWith('Custom:')) {
+    return typeCode
+  }
+  const typeKey = typeCode.toLowerCase()
+  const typeLabel = t(`sensitiveData.types.${typeKey}`, typeCode)
+  return typeLabel !== `sensitiveData.types.${typeKey}` ? typeLabel : typeCode
+}
+
+function linkFor(typeCode: string) {
+  return { path: `/sensitive/${encodeURIComponent(typeCode)}`, query: { docId: docId.value || undefined, staged: isStaged.value ? 'true' : undefined, from: from.value || undefined } }
 }
 </script>

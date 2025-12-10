@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useDetected } from '../composables/useDetected'
 import { useSelection } from '../composables/useSelection'
 import type { SensitiveItem } from '../types'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const { post } = useApi()
 
 const docId = computed(() => route.query.docId as string || '')
@@ -424,7 +426,7 @@ onMounted(() => {
               :disabled="selectedCount === 0"
               class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-sm font-medium transition"
             >
-              Apply Changes
+              {{ $t('sensitiveData.apply') }}
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useApi } from '../composables/useApi'
 import { useAuth } from '~/composables/useAuth'
 import type { UploadResult, Document, ApiError } from '~/types'
@@ -8,6 +9,7 @@ const emit = defineEmits<{ (e: 'uploaded', payload: { document: Document, detect
 
 const { upload } = useApi()
 const auth = useAuth()
+const { t } = useI18n()
 const dragOver = ref(false)
 const busy = ref(false)
 const toast = ref<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
@@ -36,8 +38,8 @@ function showToast(type: 'success' | 'error' | 'info', message: string) {
 
 async function doUpload(file: File) {
   const ext = extOf(file.name)
-  if (!allowedExt.includes(ext)) return showToast('error', 'Unsupported file type. Allowed: DOC, DOCX, TXT.')
-  if (file.size > MAX_UPLOAD_BYTES) return showToast('error', 'File is too large. Maximum 10 MB allowed.')
+  if (!allowedExt.includes(ext)) return showToast('error', t('upload.allowedFormats'))
+  if (file.size > MAX_UPLOAD_BYTES) return showToast('error', t('upload.maxSize'))
   busy.value = true
   try {
     const form = new FormData()
@@ -45,12 +47,13 @@ async function doUpload(file: File) {
     const res = await auth.fetchWithToken<UploadResult>('documents/upload', { method: 'POST', body: form })
     if (res.success && res.document) {
       emit('uploaded', { document: res.document, detected: (res as any).detected })
+      showToast('success', t('upload.uploadSuccess'))
     } else {
-      showToast('error', res.message || 'Upload failed')
+      showToast('error', res.message || t('upload.uploadError'))
     }
   } catch (e: unknown) {
     const error = e as ApiError
-    showToast('error', error?.data || error?.message || 'Upload failed')
+    showToast('error', error?.data || error?.message || t('upload.uploadError'))
   } finally { 
     busy.value = false 
   }
@@ -90,10 +93,10 @@ function onDrop(e: DragEvent) {
           <svg class="h-6 w-6 sm:h-6 sm:w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0l3.5 3.5M12 4L8.5 7.5" />
           </svg>
-          <div class="text-base sm:text-lg font-semibold text-slate-800">Upload file</div>
-          <p class="text-xs text-slate-500">DOC, DOCX, TXT — up to 10MB</p>
-          <input ref="fileInput" type="file" accept=".doc,.docx,.txt" @change="onInput" class="hidden" id="fileInput">
-          <div v-if="busy" class="text-xs text-slate-500 animate-pulse mt-1">Uploading…</div>
+          <div class="text-base sm:text-lg font-semibold text-slate-800">{{ $t('upload.selectFile') }}</div>
+          <p class="text-xs text-slate-500">{{ $t('upload.allowedFormats') }}</p>
+          <input ref="fileInput" type="file" accept=".doc,.docx,.txt,.pdf" @change="onInput" class="hidden" id="fileInput">
+          <div v-if="busy" class="text-xs text-slate-500 animate-pulse mt-1">{{ $t('upload.uploading') }}</div>
         </div>
       </div>
 

@@ -1,0 +1,150 @@
+{
+  "nav": {
+    "home": "Avaleht",
+    "admin": "Administraator",
+    "profile": "Profiil",
+    "policies": "Poliitikad",
+    "logout": "Logi välja",
+    "login": "Sisselogimine",
+    "manageUsers": "Kasutajate haldamine",
+    "createPolicy": "Loo poliitika",
+    "usePolicy": "Kasuta poliitikat"
+  },
+  "upload": {
+    "title": "Dokumentide üleslaadimine",
+    "dragDrop": "Lohistage faile siia või klõpsake valimiseks",
+    "selectFile": "Valige fail",
+    "maxSize": "Maksimaalse faili suurus: 10MB",
+    "allowedFormats": "Lubatud vormingud: DOC, DOCX, TXT, PDF",
+    "uploading": "Üleslaadimise käigus...",
+    "uploadSuccess": "Fail laaditi edukalt üles",
+    "uploadError": "Viga faili üleslaadimisel"
+  },
+  "documents": {
+    "title": "Dokumendid",
+    "redactedTitle": "Redigeeritud dokumendid",
+    "redactedNoDocuments": "Redigeeritud dokumente pole",
+    "noDocuments": "Dokumente pole",
+    "delete": "Kustuta",
+    "download": "Laadi alla",
+    "preview": "Eelvaade",
+    "deleteConfirm": "Kas olete kindel, et soovite selle dokumendi kustutada?",
+    "deleteSuccess": "Dokument on edukalt kustutatud"
+  },
+  "sensitiveData": {
+    "title": "Tundlikud andmed",
+    "detectedTypes": "Tuvastatud tüübid",
+    "noData": "Tundlikke andmeid ei tuvastatud",
+    "type": "Tüüp",
+    "value": "Väärtus",
+    "selected": "Valitud",
+    "redact": "Peida",
+    "redactAll": "Peida kõik",
+    "selectAll": "Vali kõik",
+    "deselect": "Tühista valik",
+    "apply": "Kasuta",
+    "cancel": "Tühista",
+    "customMatch": "(kohandatud sobivus)",
+    "confirmSelection": "Kinnita valik",
+    "back": "Tagasi",
+    "dataTitle": "Tundlikud {type} andmed",
+    "types": {
+      "email": "E-post",
+      "iban": "IBAN",
+      "phone": "Telefon",
+      "id": "ID",
+      "name": "Nimi",
+      "address": "Aadress",
+      "ipAddress": "IP aadress",
+      "medicalInfo": "Meditsiiniline teave",
+      "financialInfo": "Finantsteave",
+      "username": "Kasutajanimi"
+    }
+  },
+  "preview": {
+    "title": "Eelvaade",
+    "noPreview": "Ei saa eelvaadet laadida"
+  },
+  "policies": {
+    "title": "Kõik poliitikad",
+    "usePolicy": "Kasuta valitud poliitikat",
+    "noPolicy": "Poliitikad puuduvad",
+    "create": {
+      "title": "Loo uus poliitika",
+      "policyName": "Poliitika nimi",
+      "policyNamePlaceholder": "nt. Eemalda konfidentsiaalne teave",
+      "options": "Valikud",
+      "createButton": "Loo poliitika",
+      "backButton": "Tagasi",
+      "emails": "E-postid",
+      "emailsPlaceholder": "nt. example@gmail.com, john.doe@company.com",
+      "phoneNumbers": "Telefoninumbrid",
+      "phoneNumbersPlaceholder": "nt. mobiil-, maakonna- või rahvusvahelised vormingud",
+      "nationalIds": "Rahvuslike ID numbrid",
+      "nationalIdsPlaceholder": "nt. isikutuvastuse numbrid",
+      "financialInfo": "Finantsteave",
+      "financialInfoPlaceholder": "nt. IBAN",
+      "policyOptions": {
+        "emails": "E-postid",
+        "phoneNumbers": "Telefoninumbrid",
+        "nationalIds": "ID",
+        "financialInfo": "Finantsteave"
+      }
+    }
+  },
+  "auth": {
+    "login": "Sisselogimine",
+    "register": "Registreerumine",
+    "username": "Kasutajanimi",
+    "password": "Parool",
+    "confirmPassword": "Parooli kinnitus",
+    "email": "E-post",
+    "loginButton": "Logi sisse",
+    "registerButton": "Registreeruda",
+    "alreadyHaveAccount": "Sul on juba konto?",
+    "noAccount": "Sul pole kontot?",
+    "loginSuccess": "Sisselogimine õnnestus",
+    "loginError": "Sisselogimise viga",
+    "registerSuccess": "Registreerimine õnnestus",
+    "registerError": "Registreerimisviga"
+  },
+  "admin": {
+    "title": "Administraatori paneel",
+    "users": "Kasutajad",
+    "username": "Kasutajanimi",
+    "role": "Roll",
+    "actions": "Toimingud",
+    "ban": "Keela",
+    "unban": "Luba",
+    "setAdmin": "Muuda administraatoriks",
+    "removeAdmin": "Eemalda administraator",
+    "manageUsers": "Kasutajate haldamine",
+    "back": "← Tagasi",
+    "typeUsername": "Tippige kasutajanimi ja vajutage Enter",
+    "pressEnterToLoad": "Kasutaja teabe laadimiseks vajutage Enter",
+    "setRole": "Sea roll",
+    "userRole": "Kasutaja",
+    "setRoleButton": "Sea roll",
+    "banUnban": "Keela / Luba",
+    "banButton": "Keela",
+    "unbanButton": "Luba",
+    "bannedMessage": "Keelatud kasutajad ei saa sisse logida, kuni neid ei lubata.",
+    "deleteAccount": "Kustuta konto",
+    "deleteUserButton": "Kustuta kasutaja (püsivalt)"
+  },
+  "language": "Keel",
+  "customPattern": {
+    "title": "Kohandatud mustrite otsing",
+    "description": "Otsi kohandatud mustreid",
+    "placeholder": "Sisesta otsimiseks muster...",
+    "button": "Otsi"
+  },
+  "login": {
+    "title": "Tere tulemast FACET-isse",
+    "description": "FACET on lihtne tööriist dokumentide üleslaadimiseks ja tundlike andmete tuvastamiseks. Laadige üles fail, rakendage poliitikat ja saate redigeeritud koopia.",
+    "user": "Kasutaja",
+    "password": "Parool",
+    "submit": "Logi sisse",
+    "createAccount": "Loo konto"
+  }
+}

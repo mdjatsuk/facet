@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useDetected } from '../composables/useDetected'
 import { useSelection } from '../composables/useSelection'
 import type { Document, SensitiveItem } from '../types'
@@ -172,7 +173,7 @@ onMounted(() => {
               @click="discardStaged" 
               class="px-3 py-1.5 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 active:bg-red-700 transition touch-manipulation whitespace-nowrap"
             >
-              Remove
+              {{ $t('documents.delete') }}
             </button>
           </div>
         </div>

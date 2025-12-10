@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 const props = defineProps<{ url: string, contentType?: string, documentId?: string, fullScreen?: boolean }>()
 
 const config = useRuntimeConfig()
@@ -148,7 +150,7 @@ function toggleZoom() {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
         </svg>
       </button>
-      <button @click="downloadPreview" class="px-3 py-1.5 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation">Download</button>
+      <button @click="downloadPreview" class="px-3 py-1.5 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation">{{ $t('documents.download') }}</button>
     </div>
     <div :class="fullScreen ? 'h-[calc(100vh-3rem)]' : 'h-full overflow-auto'">
       <template v-if="isDoc">
@@ -162,7 +164,7 @@ function toggleZoom() {
       <template v-else>
         <div class="p-6 h-full flex flex-col items-center justify-center text-center gap-3">
           <div>Preview not available for this file type.</div>
-          <a :href="previewUrl" target="_blank" class="underline">Open / Download</a>
+          <a :href="previewUrl" target="_blank" class="underline">{{ $t('documents.download') }}</a>
         </div>
       </template>
     </div>
@@ -195,7 +197,7 @@ function toggleZoom() {
             <template v-else>
               <div class="w-full h-full flex flex-col items-center justify-center text-center gap-3 p-6">
                 <div>Preview not available for this file type.</div>
-                <a :href="previewUrl" target="_blank" class="underline text-blue-600 hover:text-blue-800">Open / Download</a>
+                <a :href="previewUrl" target="_blank" class="underline text-blue-600 hover:text-blue-800">{{ $t('documents.download') }}</a>
               </div>
             </template>
           </div>

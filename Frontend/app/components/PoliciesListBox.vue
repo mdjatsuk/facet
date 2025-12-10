@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{ 
   policies: { id: string, name: string, options: Record<string, boolean> }[], 
@@ -19,13 +22,13 @@ function cls(id: string) {
 }
 
 const optionLabels: Record<string, string> = {
-  deleteAllEmails: 'Emails',
-  removePhoneNumbers: 'Phone Numbers',
-  removeNationalIds: 'ID',
+  deleteAllEmails: t('policies.create.policyOptions.emails'),
+  removePhoneNumbers: t('policies.create.policyOptions.phoneNumbers'),
+  removeNationalIds: t('policies.create.policyOptions.nationalIds'),
   anonymizeNames: 'Names',
   removeMailingAddresses: 'Address',
   deleteIPAddresses: 'IP Address',
-  removeFinancialInfo: 'Financial Info',
+  removeFinancialInfo: t('policies.create.policyOptions.financialInfo'),
   stripMedicalInfo: 'Medical Info',
   removeUsernames: 'Usernames',
 }
@@ -50,13 +53,13 @@ function useSelected() {
 <template>
   <div class="listbox">
     <div class="listbox-header">
-      <div class="text-sm sm:text-base font-semibold">All Policies</div>
+      <div class="text-sm sm:text-base font-semibold">{{ $t('policies.title') }}</div>
       <div class="muted text-xs sm:text-sm">{{ policies.length }}</div>
     </div>
 
     <div class="listbox-body max-h-64 overflow-auto">
       <div v-if="policies.length === 0" class="text-gray-500 p-3 sm:p-4 text-center text-sm">
-        No policies created.
+        {{ $t('policies.noPolicy') }}
       </div>
 
       <template v-for="p in policies" :key="p.id">
@@ -101,7 +104,7 @@ function useSelected() {
         :disabled="policies.length === 0"
         class="w-full px-3 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
       >
-        Use Policy
+        {{ $t('nav.usePolicy') }}
       </button>
     </div>
   </div>
