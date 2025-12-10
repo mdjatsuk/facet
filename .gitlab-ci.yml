@@ -86,8 +86,8 @@ deploy:
     - echo "("$SSH_PRIVATE_KEY" | tr -d '\r')"
     - ssh-add <(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
 
-    # loome ssh ühenduse ja pälume uusimad Docker-pildid ning üles
-    - ssh ubuntu@${DOMAIN} "(aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}) && CI_COMMIT_SHA=${CI_COMMIT_SHA} docker compose -f ~/app/compose.yml pull && CI_COMMIT_SHA=${CI_COMMIT_SHA} docker compose -f ~/app/compose.yml up -d"
+    # loome ssh ühenduse, uuendame .env faili, pälume uusimad pildid ja recreatume konteineri
+    - ssh ubuntu@${DOMAIN} "sed -i 's/CI_COMMIT_SHA=.*/CI_COMMIT_SHA=${CI_COMMIT_SHA}/' ~/app/.env && (aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}) && docker compose -f ~/app/compose.yml pull && docker compose -f ~/app/compose.yml up -d --force-recreate"
   after_script:
     - exit
   stage: deploy
