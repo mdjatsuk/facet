@@ -28,6 +28,9 @@ export default defineNuxtConfig({
       title: 'FACET', 
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover' },
+        // Strengthen mobile detection for older mobile browsers
+        { name: 'HandheldFriendly', content: 'true' },
+        { name: 'MobileOptimized', content: 'width' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
         { name: 'apple-mobile-web-app-title', content: 'FACET' },
