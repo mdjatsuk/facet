@@ -33,7 +33,7 @@
   },
   "sensitiveData": {
     "title": "Sensitive Data",
-    "detectedTypes": "Обнаруженные",
+    "detectedTypes": "Detected",
     "noData": "No sensitive data detected",
     "type": "Type",
     "value": "Value",
@@ -66,7 +66,8 @@
   },
   "preview": {
     "title": "Preview",
-    "noPreview": "Unable to load preview"
+    "noPreview": "Unable to load preview",
+    "fullPreview": "Full Preview"
   },
   "policies": {
     "title": "All Policies",
@@ -139,15 +140,18 @@
   "customPattern": {
     "title": "Custom Pattern Search",
     "description": "Search for custom patterns",
-    "placeholder": "Enter pattern to search...",
-    "button": "Search"
+    "placeholder": "Enter a pattern to search...",
+    "button": "Search",
+    "noMatches": "No matches found for '{pattern}'",
+    "foundMatches": "Found {count} match(es) for '{pattern}'",
+    "note": "Note: Custom patterns search by value and will be applied to all occurrences in the document."
   },
   "login": {
     "title": "Welcome to FACET",
     "description": "FACET is a simple tool for uploading documents and detecting sensitive data. Upload a file, apply a policy, and get a redacted copy.",
     "user": "User",
     "password": "Password",
-    "submit": "Submit",
+    "submit": "Log in",
     "createAccount": "Create account"
   }
 }

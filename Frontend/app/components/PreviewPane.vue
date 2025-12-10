@@ -177,7 +177,7 @@ function toggleZoom() {
         <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
           <!-- Header -->
           <div class="flex items-center justify-between gap-2 p-4 border-b">
-            <h2 class="text-lg font-semibold text-slate-900">Full Preview</h2>
+            <h2 class="text-lg font-semibold text-slate-900">{{ $t('preview.fullPreview') }}</h2>
             <button @click="isZoomed = false" class="p-2 hover:bg-slate-100 rounded transition" title="Close">
               <svg class="w-5 h-5 text-slate-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

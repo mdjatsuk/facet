@@ -63,7 +63,8 @@
   },
   "preview": {
     "title": "Eelvaade",
-    "noPreview": "Ei saa eelvaadet laadida"
+    "noPreview": "Ei saa eelvaadet laadida",
+    "fullPreview": "Täielik eelvaade"
   },
   "policies": {
     "title": "Kõik poliitikad",
@@ -134,10 +135,13 @@
   },
   "language": "Keel",
   "customPattern": {
-    "title": "Kohandatud mustrite otsing",
+    "title": "Kohandatud mustri otsing",
     "description": "Otsi kohandatud mustreid",
-    "placeholder": "Sisesta otsimiseks muster...",
-    "button": "Otsi"
+    "placeholder": "Sisesta otsingumuster...",
+    "button": "Otsi",
+    "noMatches": "Vastavusi ei leitud mustrile '{pattern}'",
+    "foundMatches": "Leiti {count} vastavust mustrile '{pattern}'",
+    "note": "Märkus: kohandatud mustrid otsitakse väärtuse järgi ja rakendatakse kõigile esinemistele dokumendis."
   },
   "login": {
     "title": "Tere tulemast FACET-isse",

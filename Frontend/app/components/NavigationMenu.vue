@@ -100,7 +100,7 @@
                 class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:bg-slate-100"
                 :class="{ 'bg-primary/10 text-primary font-medium': currentLanguageCode === lang.code }"
               >
-                <span class="mr-2">{{ lang.flag }}</span>
+                <span class="font-semibold mr-2">{{ lang.short }}</span>
                 <span>{{ lang.name }}</span>
               </button>
             </div>
@@ -240,9 +240,9 @@ const { logOut, isAuthenticated, currentUsername, currentRole } = useAuth()
 const { locale } = useI18n()
 
 const languageList = [
-  { code: 'en', name: 'Eng', flag: '🇬🇧' },
-  { code: 'ru', name: 'Rus', flag: '🇷🇺' },
-  { code: 'est', name: 'Est', flag: '🇪🇪' }
+  { code: 'en', short: 'Eng', name: 'English' },
+  { code: 'ru', short: 'Рус', name: 'Русский' },
+  { code: 'est', short: 'Est', name: 'Eesti' }
 ]
 
 const currentLanguageCode = computed(() => locale.value)

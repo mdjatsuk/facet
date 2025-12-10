@@ -5,8 +5,7 @@
       class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
       :aria-label="`Language: ${currentLanguage?.name || 'EN'}`"
     >
-      <span class="text-lg">{{ currentLanguage?.flag || '🌐' }}</span>
-      <span class="text-sm font-medium text-slate-700 hidden sm:block">{{ currentLanguage?.code?.toUpperCase() || 'EN' }}</span>
+      <span class="text-sm font-medium text-slate-700">{{ currentLanguage?.short || 'EN' }}</span>
       <svg class="w-4 h-4 text-slate-600 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
       </svg>
@@ -30,10 +29,9 @@
             class="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-100 transition-colors text-left"
             :class="{ 'bg-primary/10 border-r-2 border-primary': lang.code === currentLanguage?.code }"
           >
-            <span class="text-lg">{{ lang.flag }}</span>
+            <div class="text-sm font-medium text-slate-700 min-w-6">{{ lang.short }}</div>
             <div>
               <div class="font-medium text-slate-700">{{ lang.name }}</div>
-              <div class="text-xs text-slate-500">{{ lang.code.toUpperCase() }}</div>
             </div>
             <svg v-if="lang.code === currentLanguage?.code" class="w-5 h-5 text-primary ml-auto" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
@@ -53,9 +51,9 @@ const open = ref(false)
 const { locale } = useI18n()
 
 const languages = [
-  { code: 'en', name: 'Eng', flag: '🇬🇧' },
-  { code: 'ru', name: 'Rus', flag: '🇷🇺' },
-  { code: 'est', name: 'Est', flag: '🇪🇪' }
+  { code: 'en', name: 'English', short: 'Eng' },
+  { code: 'ru', name: 'Русский', short: 'Рус' },
+  { code: 'est', name: 'Eesti', short: 'Est' }
 ]
 
 const currentLanguage = computed(() => {

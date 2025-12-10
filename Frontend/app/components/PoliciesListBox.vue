@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const props = defineProps<{ 
   policies: { id: string, name: string, options: Record<string, boolean> }[], 
@@ -21,7 +21,7 @@ function cls(id: string) {
   return ['listbox-item', props.selectedId === id ? 'listbox-item-active' : ''].join(' ') 
 }
 
-const optionLabels: Record<string, string> = {
+const optionLabels = computed(() => ({
   deleteAllEmails: t('policies.create.policyOptions.emails'),
   removePhoneNumbers: t('policies.create.policyOptions.phoneNumbers'),
   removeNationalIds: t('policies.create.policyOptions.nationalIds'),
@@ -31,7 +31,7 @@ const optionLabels: Record<string, string> = {
   removeFinancialInfo: t('policies.create.policyOptions.financialInfo'),
   stripMedicalInfo: 'Medical Info',
   removeUsernames: 'Usernames',
-}
+}))
 
 function toggleExpand(id: string) {
   expandedPolicyId.value = expandedPolicyId.value === id ? null : id
@@ -40,7 +40,7 @@ function toggleExpand(id: string) {
 function getActiveOptions(policy: typeof props.policies[0]) {
   return Object.entries(policy.options)
     .filter(([_, enabled]) => enabled)
-    .map(([key]) => optionLabels[key] || key)
+    .map(([key]) => optionLabels.value[key] || key)
 }
 
 function useSelected() {
