@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'  
 import { useRoute, useRouter } from 'vue-router'  
+import { useI18n } from 'vue-i18n'
 import { useDetected } from '~/composables/useDetected' 
 import { useSelection } from '~/composables/useSelection'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const type = ref((route.params.type as string) || '')  
 
@@ -77,7 +79,7 @@ function applyAndBack() {
 <template>
   <div class="max-w-3xl mx-auto py-8">
     <div class="card p-6">
-      <h1 class="text-2xl font-semibold mb-4">Sensitive {{ type }} Data</h1>
+      <h1 class="text-2xl font-semibold mb-4">{{ t('sensitiveData.dataTitle', { type: type }) }}</h1>
       
       <div v-if="docId === ''" class="text-red-500 p-4 text-center">
         Error: No document selected. Go back and select a file.
@@ -97,7 +99,7 @@ function applyAndBack() {
           <span class="font-mono text-sm break-all">{{ item.value }}</span>
 
           <span v-if="item.indexStart >= 0" class="text-xs text-slate-400 ml-2">({{ item.indexStart }}–{{ item.indexEnd }})</span>
-          <span v-else class="text-xs text-slate-400 ml-2">(custom match)</span>
+          <span v-else class="text-xs text-slate-400 ml-2">{{ $t('sensitiveData.customMatch') }}</span>
   </li>
       </ul>
 
@@ -106,16 +108,16 @@ function applyAndBack() {
             @click="selectAll"
             class="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg"
           >
-            Select all
+            {{ $t('sensitiveData.selectAll') }}
           </button>
         <button
           @click="applyAndBack"
           class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50"
           :disabled="itemsForType.length === 0"
         >
-          Confirm Selection
+          {{ $t('sensitiveData.confirmSelection') }}
         </button>
-        <NuxtLink to="/" class="px-4 py-2 bg-transparent hover:bg-slate-50 text-slate-700 rounded-lg">Back</NuxtLink>
+        <NuxtLink to="/" class="px-4 py-2 bg-transparent hover:bg-slate-50 text-slate-700 rounded-lg">{{ $t('sensitiveData.back') }}</NuxtLink>
       </div>
     </div>
   </div>

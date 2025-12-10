@@ -9,6 +9,7 @@ function onPatternFound(type: string) {
   }
 }
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useDetected } from '../composables/useDetected'
 import { useSelection } from '../composables/useSelection'
 import type { Document, SensitiveItem } from '../types'
@@ -16,6 +17,7 @@ import type { Document, SensitiveItem } from '../types'
 const { get, del, post } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
 const router = useRouter()
+const { t } = useI18n()
 
 const docs = ref<Document[]>([])
 const selectedId = ref<string | null>(null)
@@ -57,13 +59,13 @@ const selectedCount = computed(() => {
 const viewedPolicy = ref<{ id: string, name: string, options: Record<string, boolean> } | null>(null)
 
 const optionLabels: Record<string, string> = {
-  deleteAllEmails: 'Emails',
-  removePhoneNumbers: 'Phone Number',
-  removeNationalIds: 'ID',
+  deleteAllEmails: t('policies.create.policyOptions.emails'),
+  removePhoneNumbers: t('policies.create.policyOptions.phoneNumbers'),
+  removeNationalIds: t('policies.create.policyOptions.nationalIds'),
   anonymizeNames: 'Names',
   removeMailingAddresses: 'Address',
   deleteIPAddresses: 'IP Address',
-  removeFinancialInfo: 'Financial Info',
+  removeFinancialInfo: t('policies.create.policyOptions.financialInfo'),
   stripMedicalInfo: 'Medical Info',
   removeUsernames: 'Usernames',
 }
@@ -144,6 +146,24 @@ watch(selectedId, (newVal) => {
 
 // Scope stagedDoc and policies in localStorage per-user so different accounts don't see each other's data
 const { currentUsername, isAuthenticated, logOut, currentRole } = useAuth()
+const { locale } = useI18n()
+
+const showLanguageMenu = ref(false)
+const languageList = [
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { code: 'est', name: 'Eesti', flag: '🇪🇪' }
+]
+
+const changeLanguage = (code: string) => {
+  locale.value = code
+  if (process.client) {
+    localStorage.setItem('language', code)
+    document.documentElement.lang = code
+  }
+  showLanguageMenu.value = false
+}
+
 const userInitials = computed(() => {
   const name = currentUsername.value || ''
   if (!name) return ''
@@ -177,6 +197,14 @@ onMounted(() => {
       localStorage.removeItem(stagedDocKey.value)
     }
   }
+  
+  // Close language menu when clicking outside
+  document.addEventListener('click', (e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('[data-language-menu]')) {
+      showLanguageMenu.value = false
+    }
+  })
 })
 
 function deletePolicy(id: string) {
@@ -613,14 +641,37 @@ async function discardStaged() {
                 to="/admin"
                 class="px-3 py-1.5 sm:px-4 sm:py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
               >
-                Manage users
+                {{ $t('nav.manageUsers') }}
               </NuxtLink>
             </template>
           </ClientOnly>
 
           <NuxtLink to="/policies/create" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors text-xs sm:text-sm font-medium whitespace-nowrap">
-            Create policy
+            {{ $t('nav.createPolicy') }}
           </NuxtLink>
+          
+          <div class="relative" data-language-menu>
+            <button @click="showLanguageMenu = !showLanguageMenu" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-xs sm:text-sm font-medium whitespace-nowrap flex items-center gap-2">
+              <span>🌐</span>
+              <span>{{ locale }}</span>
+              <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showLanguageMenu }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </button>
+            
+            <div v-if="showLanguageMenu" class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50" data-language-menu>
+              <button
+                v-for="lang in languageList"
+                :key="lang.code"
+                @click="changeLanguage(lang.code)"
+                class="w-full text-left px-4 py-2 text-sm transition-colors hover:bg-slate-100"
+                :class="{ 'bg-blue-50 text-blue-700 font-medium': locale === lang.code }"
+              >
+                <span class="mr-2">{{ lang.flag }}</span>
+                <span>{{ lang.name }}</span>
+              </button>
+            </div>
+          </div>
             <div class="min-w-fit sm:min-w-[220px] flex items-center justify-end">
               <div class="flex items-center gap-2 sm:gap-3">
                 <div class="flex items-center gap-2">
@@ -634,7 +685,7 @@ async function discardStaged() {
                           </svg>
                         </div>
                         <div class="hidden sm:block text-sm text-slate-700">{{ currentUsername || 'You' }}</div>
-                        <button @click="logOut" class="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm text-red-600 border border-red-100 rounded hover:bg-red-50">Logout</button>
+                        <button @click="logOut" class="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm text-red-600 border border-red-100 rounded hover:bg-red-50">{{ $t('nav.logout') }}</button>
                       </div>
                       <div v-else class="w-24" aria-hidden="true"></div>
                     </template>
@@ -660,11 +711,11 @@ async function discardStaged() {
         <CustomPatternSearch :doc-id="stagedDoc?.id || selectedId" @pattern-found="onPatternFound" />
         <div class="mt-2 flex flex-row gap-2 items-center">
           <button @click="applySelected" class="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 touch-manipulation text-sm font-bold whitespace-nowrap" :disabled="!(stagedDoc?.id || selectedId) || selectedCount === 0">
-            Apply Changes
+            {{ $t('sensitiveData.apply') }}
           </button>
           <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
             <span class="inline-flex items-center justify-center w-5 h-5 bg-blue-600 text-white rounded-full text-xs font-bold">{{ selectedCount }}</span>
-            <span>Selected</span>
+            <span>{{ $t('sensitiveData.selected') }}</span>
           </div>
         </div>
       </section>
@@ -706,7 +757,7 @@ async function discardStaged() {
                 @click="discardStaged" 
                 class="px-4 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 active:bg-red-200 text-sm font-medium touch-manipulation transition"
               >
-                Remove
+                {{ $t('documents.delete') }}
               </button>
             </div>
           </div>
@@ -773,7 +824,7 @@ async function discardStaged() {
                 </div>
               </div>
               <button @click="discardStaged" class="px-3 py-1.5 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 active:bg-red-700 transition touch-manipulation whitespace-nowrap">
-                Remove
+                {{ $t('documents.delete') }}
               </button>
             </div>
           </div>

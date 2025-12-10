@@ -13,7 +13,7 @@
         </div>
         <span class="text-xl font-semibold text-ink">FACET</span>
       </div>
-      <div class="w-11"></div> <!-- Spacer for centering -->
+      <LanguageSwitcher />
     </div>
 
     <!-- Overlay -->
@@ -71,16 +71,39 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Create Policy
+              {{ $t('nav.createPolicy') }}
             </NuxtLink>
             <ClientOnly>
               <NuxtLink v-if="currentRole === 'Admin'" to="/admin" class="nav-link text-orange-700" @click="open = false">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
-                Manage Users
+                {{ $t('nav.manageUsers') }}
               </NuxtLink>
             </ClientOnly>
+            <button @click="showLanguageMenu = !showLanguageMenu" class="nav-link flex items-center justify-between w-full" :class="{ 'bg-slate-100': showLanguageMenu }">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10m-5 10l-5-10m14-4h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span>Language</span>
+              </div>
+              <svg class="w-4 h-4 text-slate-600 transition-transform" :class="{ 'rotate-180': showLanguageMenu }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </button>
+            <div v-if="showLanguageMenu" class="space-y-1 border-t border-slate-100 pt-2">
+              <button
+                v-for="lang in languageList"
+                :key="lang.code"
+                @click="changeLanguage(lang.code)"
+                class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:bg-slate-100"
+                :class="{ 'bg-primary/10 text-primary font-medium': currentLanguageCode === lang.code }"
+              >
+                <span class="mr-2">{{ lang.flag }}</span>
+                <span>{{ lang.name }}</span>
+              </button>
+            </div>
           </div>
 
           <!-- Documents Section -->
@@ -116,6 +139,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
+                    <span class="ml-1 font-semibold text-xs">{{ $t('documents.delete') }}</span>
                   </button>
                 </div>
               </button>
@@ -164,19 +188,20 @@
               :disabled="!selectedPolicyId"
               class="w-full mt-3 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              Use Selected Policy
+              {{ $t('policies.usePolicy') }}
             </button>
           </div>
         </div>
         
         <!-- Logout Button at Bottom -->
         <ClientOnly>
-          <div v-if="isAuthenticated" class="p-4 border-t border-slate-200">
+          <div v-if="isAuthenticated" class="p-4 border-t border-slate-200 space-y-3">
+            <LanguageSwitcher />
             <button @click="logout" class="nav-link text-red-600 w-full justify-start">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Logout
+              {{ $t('nav.logout') }}
             </button>
           </div>
         </ClientOnly>
@@ -188,7 +213,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '~/composables/useAuth'
+import LanguageSwitcher from './LanguageSwitcher.vue'
 import type { Document } from '~/types'
 
 const props = defineProps<{
@@ -207,8 +234,18 @@ const emit = defineEmits<{
 }>()
 
 const open = ref(false)
+const showLanguageMenu = ref(false)
 const router = useRouter()
 const { logOut, isAuthenticated, currentUsername, currentRole } = useAuth()
+const { locale } = useI18n()
+
+const languageList = [
+  { code: 'en', name: 'Eng', flag: '🇬🇧' },
+  { code: 'ru', name: 'Rus', flag: '🇷🇺' },
+  { code: 'est', name: 'Est', flag: '🇪🇪' }
+]
+
+const currentLanguageCode = computed(() => locale.value)
 
 const userInitials = computed(() => {
   const name = currentUsername.value || ''
@@ -222,6 +259,15 @@ const userInitials = computed(() => {
 function logout() {
   open.value = false
   logOut()
+}
+
+function changeLanguage(code: string) {
+  locale.value = code
+  if (process.client) {
+    localStorage.setItem('language', code)
+    document.documentElement.lang = code
+  }
+  showLanguageMenu.value = false
 }
 
 function selectDoc(id: string) {

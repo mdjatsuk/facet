@@ -1,42 +1,42 @@
 <template>
   <div class="p-3 sm:p-6 max-w-xl mx-auto">
     <div class="flex items-center justify-between mb-4 gap-3">
-      <h1 class="text-xl sm:text-2xl font-bold">Manage users</h1>
-      <button @click="navigateBack" class="px-2 py-1 sm:px-3 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation whitespace-nowrap">← Back</button>
+      <h1 class="text-xl sm:text-2xl font-bold">{{ $t('admin.manageUsers') }}</h1>
+      <button @click="navigateBack" class="px-2 py-1 sm:px-3 sm:py-1 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded text-sm touch-manipulation whitespace-nowrap">{{ $t('admin.back') }}</button>
     </div>
 
     <div v-if="!isAdmin" class="text-red-600 text-sm sm:text-base">You are not authorized to view this page.</div>
 
     <div v-if="isAdmin" class="space-y-4">
       <div>
-        <label class="block mb-2 text-sm sm:text-base">Username</label>
-        <input v-model="username" @keyup.enter="fetchUser" placeholder="Type username and press Enter" class="w-full p-2 sm:p-2.5 border rounded text-base" />
-        <div class="text-xs text-slate-500 mt-1">Press Enter to load user info</div>
+        <label class="block mb-2 text-sm sm:text-base">{{ $t('admin.username') }}</label>
+        <input v-model="username" @keyup.enter="fetchUser" :placeholder="$t('admin.typeUsername')" class="w-full p-2 sm:p-2.5 border rounded text-base" />
+        <div class="text-xs text-slate-500 mt-1">{{ $t('admin.pressEnterToLoad') }}</div>
       </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label class="block mb-2 text-sm sm:text-base">Set role</label>
+          <label class="block mb-2 text-sm sm:text-base">{{ $t('admin.setRole') }}</label>
           <select v-model="role" class="w-full p-2 sm:p-2.5 border rounded mb-2 text-base">
-            <option value="User">User</option>
+            <option value="User">{{ $t('admin.userRole') }}</option>
             <option value="Admin">Admin</option>
           </select>
-          <button @click="setRole" :disabled="loading || !username" class="w-full px-3 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">Set Role</button>
+          <button @click="setRole" :disabled="loading || !username" class="w-full px-3 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">{{ $t('admin.setRoleButton') }}</button>
         </div>
 
         <div>
-          <label class="block mb-2 text-sm sm:text-base">Ban / Unban</label>
+          <label class="block mb-2 text-sm sm:text-base">{{ $t('admin.banUnban') }}</label>
           <div class="flex flex-col sm:flex-row gap-2">
-            <button @click="banUser" :disabled="loading || !username" class="flex-1 px-3 py-2.5 sm:py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">Ban</button>
-            <button @click="unbanUser" :disabled="loading || !username" class="flex-1 px-3 py-2.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">Unban</button>
+            <button @click="banUser" :disabled="loading || !username" class="flex-1 px-3 py-2.5 sm:py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">{{ $t('admin.banButton') }}</button>
+            <button @click="unbanUser" :disabled="loading || !username" class="flex-1 px-3 py-2.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">{{ $t('admin.unbanButton') }}</button>
           </div>
-          <div class="text-xs text-slate-500 mt-1">Banned users cannot log in until unbanned.</div>
+          <div class="text-xs text-slate-500 mt-1">{{ $t('admin.bannedMessage') }}</div>
         </div>
       </div>
 
       <div>
-        <label class="block mb-2 text-sm sm:text-base">Delete account</label>
-        <button @click="onDelete" :disabled="loading || !username" class="w-full px-3 py-2.5 sm:py-2 bg-red-700 hover:bg-red-800 active:bg-red-900 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">Delete user (permanent)</button>
+        <label class="block mb-2 text-sm sm:text-base">{{ $t('admin.deleteAccount') }}</label>
+        <button @click="onDelete" :disabled="loading || !username" class="w-full px-3 py-2.5 sm:py-2 bg-red-700 hover:bg-red-800 active:bg-red-900 text-white rounded touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">{{ $t('admin.deleteUserButton') }}</button>
       </div>
 
       <div v-if="message" class="mt-2 text-sm sm:text-base" :class="{ 'text-green-600': success, 'text-red-600': !success }">{{ message }}</div>
@@ -60,9 +60,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '~/composables/useAuth'
 
 const { currentRole, fetchWithToken } = useAuth() as any
+const { t } = useI18n()
 const username = ref('')
 const role = ref('User')
 const loading = ref(false)

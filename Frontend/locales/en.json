@@ -1,0 +1,153 @@
+{
+  "nav": {
+    "home": "Home",
+    "admin": "Admin",
+    "profile": "Profile",
+    "policies": "Policies",
+    "logout": "Logout",
+    "login": "Login",
+    "manageUsers": "Manage users",
+    "createPolicy": "Create policy",
+    "usePolicy": "Use Policy"
+  },
+  "upload": {
+    "title": "Upload Documents",
+    "dragDrop": "Drag and drop files here or click to select",
+    "selectFile": "Select File",
+    "maxSize": "Max file size: 10MB",
+    "allowedFormats": "Allowed formats: DOC, DOCX, TXT, PDF",
+    "uploading": "Uploading...",
+    "uploadSuccess": "File uploaded successfully",
+    "uploadError": "Error uploading file"
+  },
+  "documents": {
+    "title": "Documents",
+    "redactedTitle": "Redacted Documents",
+    "redactedNoDocuments": "No redacted documents yet",
+    "noDocuments": "No documents yet",
+    "delete": "Remove",
+    "download": "Download",
+    "preview": "Preview",
+    "deleteConfirm": "Are you sure you want to delete this document?",
+    "deleteSuccess": "Document deleted successfully"
+  },
+  "sensitiveData": {
+    "title": "Sensitive Data",
+    "detectedTypes": "Обнаруженные",
+    "noData": "No sensitive data detected",
+    "type": "Type",
+    "value": "Value",
+    "selected": "Selected",
+    "redact": "Redact",
+    "redactAll": "Redact All",
+    "selectAll": "Select all",
+    "deselect": "Deselect",
+    "apply": "Apply Changes",
+    "cancel": "Cancel",
+    "customMatch": "(custom match)",
+    "confirmSelection": "Confirm Selection",
+    "back": "Back",
+    "types": {
+      "email": "Email",
+      "iban": "IBAN",
+      "phone": "Phone",
+      "id": "ID",
+      "name": "Name",
+      "address": "Address",
+      "ipAddress": "IP Address",
+      "medicalInfo": "Medical Info",
+      "financialInfo": "Financial Info",
+      "username": "Username"
+    },
+    "sensitiveIbanData": "Sensitive IBAN Data",
+    "sensitiveIdData": "Sensitive ID Data",
+    "sensitivePhoneData": "Sensitive phone Data",
+    "dataTitle": "Sensitive {type} Data"
+  },
+  "preview": {
+    "title": "Preview",
+    "noPreview": "Unable to load preview"
+  },
+  "policies": {
+    "title": "All Policies",
+    "usePolicy": "Use Selected Policy",
+    "noPolicy": "No policies yet",
+    "create": {
+      "title": "Create new policy",
+      "policyName": "Policy name",
+      "policyNamePlaceholder": "e.g. Remove confidential info",
+      "options": "Options",
+      "createButton": "Create policy",
+      "backButton": "Back",
+      "emails": "Emails",
+      "emailsPlaceholder": "e.g., example@gmail.com, john.doe@company.com",
+      "phoneNumbers": "Phone numbers",
+      "phoneNumbersPlaceholder": "e.g., mobile, landline, or international formats",
+      "nationalIds": "National ID numbers",
+      "nationalIdsPlaceholder": "e.g., personal identification numbers",
+      "financialInfo": "Financial information",
+      "financialInfoPlaceholder": "e.g., IBAN",
+      "policyOptions": {
+        "emails": "Emails",
+        "phoneNumbers": "Phone Numbers",
+        "nationalIds": "ID",
+        "financialInfo": "Financial Info"
+      }
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "email": "Email",
+    "loginButton": "Sign In",
+    "registerButton": "Sign Up",
+    "alreadyHaveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "loginSuccess": "Logged in successfully",
+    "loginError": "Login failed",
+    "registerSuccess": "Registration successful",
+    "registerError": "Registration failed"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "users": "Users",
+    "username": "Username",
+    "role": "Role",
+    "actions": "Actions",
+    "ban": "Ban",
+    "unban": "Unban",
+    "setAdmin": "Set Admin",
+    "removeAdmin": "Remove Admin",
+    "manageUsers": "Manage users",
+    "back": "← Back",
+    "typeUsername": "Type username and press Enter",
+    "pressEnterToLoad": "Press Enter to load user info",
+    "setRole": "Set role",
+    "userRole": "User",
+    "setRoleButton": "Set Role",
+    "banUnban": "Ban / Unban",
+    "banButton": "Ban",
+    "unbanButton": "Unban",
+    "bannedMessage": "Banned users cannot log in until unbanned.",
+    "deleteAccount": "Delete account",
+    "deleteUserButton": "Delete user (permanent)"
+  },
+  "language": "Language",
+  "customPattern": {
+    "title": "Custom Pattern Search",
+    "description": "Search for custom patterns",
+    "placeholder": "Enter pattern to search...",
+    "button": "Search"
+  },
+  "login": {
+    "title": "Welcome to FACET",
+    "description": "FACET is a simple tool for uploading documents and detecting sensitive data. Upload a file, apply a policy, and get a redacted copy.",
+    "user": "User",
+    "password": "Password",
+    "submit": "Submit",
+    "createAccount": "Create account"
+  }
+}

@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Document } from '~/types'
+
+const { t } = useI18n()
 
 const props = defineProps<{ docs: Document[], selectedId?: string | null }>()
 const emit = defineEmits<{ 
@@ -15,13 +18,13 @@ function cls(id: string) {
 <template>
   <div class="listbox">
     <div class="listbox-header">
-      <div class="text-sm sm:text-base font-semibold">Redacted Documents</div>
+      <div class="text-sm sm:text-base font-semibold">{{ $t('documents.redactedTitle') }}</div>
       <div class="muted text-xs sm:text-sm">{{ docs.length }}</div>
     </div>
 
     <div class="listbox-body max-h-64 overflow-auto">
     <div v-if="docs.length === 0" class="text-gray-500 p-3 sm:p-4 text-center text-sm">
-             No redacted documents yet.
+             {{ $t('documents.redactedNoDocuments') }}
     </div>
 
       <div v-for="d in docs" :key="d.id" :class="cls(d.id)" @click="$emit('select', d.id)">

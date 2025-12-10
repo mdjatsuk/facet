@@ -1,0 +1,153 @@
+{
+  "nav": {
+    "home": "Главная",
+    "admin": "Администратор",
+    "profile": "Профиль",
+    "policies": "Политики",
+    "logout": "Выход",
+    "login": "Вход",
+    "manageUsers": "Управление пользователями",
+    "createPolicy": "Создать политику",
+    "usePolicy": "Использовать политику"
+  },
+  "upload": {
+    "title": "Загрузка документов",
+    "dragDrop": "Перетащите файлы сюда или нажмите для выбора",
+    "selectFile": "Выбрать файл",
+    "maxSize": "Максимальный размер файла: 10МБ",
+    "allowedFormats": "Допустимые форматы: DOC, DOCX, TXT, PDF",
+    "uploading": "Загрузка...",
+    "uploadSuccess": "Файл успешно загружен",
+    "uploadError": "Ошибка при загрузке файла"
+  },
+  "documents": {
+    "title": "Документы",
+    "redactedTitle": "Отредактированные документы",
+    "redactedNoDocuments": "Отредактированные документы отсутствуют",
+    "noDocuments": "Документов не найдено",
+    "delete": "Удалить",
+    "download": "Скачать",
+    "preview": "Просмотр",
+    "deleteConfirm": "Вы уверены, что хотите удалить этот документ?",
+    "deleteSuccess": "Документ успешно удален"
+  },
+  "sensitiveData": {
+    "title": "Чувствительные данные",
+    "detectedTypes": "Обнаруженные",
+    "noData": "Чувствительные данные не обнаружены",
+    "type": "Тип",
+    "value": "Значение",
+    "selected": "Выбрано",
+    "redact": "Скрыть",
+    "redactAll": "Скрыть все",
+    "selectAll": "Выбрать все",
+    "deselect": "Отменить",
+    "apply": "Применить",
+    "cancel": "Отмена",
+    "customMatch": "(пользовательское совпадение)",
+    "confirmSelection": "Подтвердить выбор",
+    "back": "Назад",
+    "types": {
+      "email": "Электронная почта",
+      "iban": "IBAN",
+      "phone": "Телефон",
+      "id": "ID",
+      "name": "Имя",
+      "address": "Адрес",
+      "ipAddress": "IP адрес",
+      "medicalInfo": "Медицинская информация",
+      "financialInfo": "Финансовая информация",
+      "username": "Имя пользователя"
+    },
+    "sensitiveIbanData": "Чувствительные IBAN данные",
+    "sensitiveIdData": "Чувствительные ID данные",
+    "sensitivePhoneData": "Чувствительные данные телефона",
+    "dataTitle": "Чувствительные {type} данные"
+  },
+  "preview": {
+    "title": "Просмотр",
+    "noPreview": "Не удается загрузить просмотр"
+  },
+  "policies": {
+    "title": "Все политики",
+    "usePolicy": "Использовать выбранную политику",
+    "noPolicy": "Политики отсутствуют",
+    "create": {
+      "title": "Создать новую политику",
+      "policyName": "Название политики",
+      "policyNamePlaceholder": "например: Удалить конфиденциальную информацию",
+      "options": "Параметры",
+      "createButton": "Создать политику",
+      "backButton": "Назад",
+      "emails": "Электронная почта",
+      "emailsPlaceholder": "например: example@gmail.com, john.doe@company.com",
+      "phoneNumbers": "Номера телефонов",
+      "phoneNumbersPlaceholder": "например: мобильный, стационарный или международные форматы",
+      "nationalIds": "Номера национальных удостоверений",
+      "nationalIdsPlaceholder": "например: номера личных документов",
+      "financialInfo": "Финансовая информация",
+      "financialInfoPlaceholder": "например: IBAN",
+      "policyOptions": {
+        "emails": "Электронная почта",
+        "phoneNumbers": "Номера телефонов",
+        "nationalIds": "ID",
+        "financialInfo": "Финансовая информация"
+      }
+    }
+  },
+  "auth": {
+    "login": "Вход",
+    "register": "Регистрация",
+    "username": "Имя пользователя",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "email": "Электронная почта",
+    "loginButton": "Войти",
+    "registerButton": "Зарегистрироваться",
+    "alreadyHaveAccount": "Уже есть аккаунт?",
+    "noAccount": "Нет аккаунта?",
+    "loginSuccess": "Успешный вход",
+    "loginError": "Ошибка входа",
+    "registerSuccess": "Регистрация успешна",
+    "registerError": "Ошибка регистрации"
+  },
+  "admin": {
+    "title": "Панель администратора",
+    "users": "Пользователи",
+    "username": "Имя пользователя",
+    "role": "Роль",
+    "actions": "Действия",
+    "ban": "Забанить",
+    "unban": "Разбанить",
+    "setAdmin": "Сделать администратором",
+    "removeAdmin": "Удалить администратора",
+    "manageUsers": "Управление пользователями",
+    "back": "← Назад",
+    "typeUsername": "Введите имя пользователя и нажмите Enter",
+    "pressEnterToLoad": "Нажмите Enter для загрузки информации пользователя",
+    "setRole": "Установить роль",
+    "userRole": "Пользователь",
+    "setRoleButton": "Установить роль",
+    "banUnban": "Заблокировать / Разблокировать",
+    "banButton": "Заблокировать",
+    "unbanButton": "Разблокировать",
+    "bannedMessage": "Заблокированные пользователи не могут войти, пока не будут разблокированы.",
+    "deleteAccount": "Удалить аккаунт",
+    "deleteUserButton": "Удалить пользователя (постоянно)"
+  },
+  "language": "Язык",
+  "customPattern": {
+    "title": "Поиск по пользовательским шаблонам",
+    "description": "Поиск по пользовательским шаблонам",
+    "placeholder": "Введите шаблон для поиска...",
+    "button": "Поиск"
+  },
+  "login": {
+    "title": "Добро пожаловать в FACET",
+    "description": "FACET - это простой инструмент для загрузки документов и обнаружения чувствительных данных. Загрузите файл, примените политику и получите отредактированную копию.",
+    "user": "Пользователь",
+    "password": "Пароль",
+    "submit": "Отправить",
+    "createAccount": "Создать учетную запись"
+  }
+}
