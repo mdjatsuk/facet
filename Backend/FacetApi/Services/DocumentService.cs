@@ -48,7 +48,11 @@ public class DocumentService : IDocumentService
         var doc = _db.Documents.Find(id);
         if (doc is null) return null;
         var fullPath = Directory.GetFiles(_storageRoot, $"{id}_*").FirstOrDefault();
-        if (fullPath is null) return null;
+        if (fullPath is null) 
+        {
+            _logger?.LogWarning("File not found in storage for document id={Id}. Storage root={StorageRoot}", id, _storageRoot);
+            return null;
+        }
         try
         {
             var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -537,17 +541,38 @@ public class DocumentService : IDocumentService
             , OwnerId = originalOwnerId
         };
 
-        _db.Documents.Add(newDoc);
-
         var destPath = Path.Combine(_storageRoot, $"{newDoc.Id}_{newDoc.FileName}");
-        using (var fs = new FileStream(destPath, FileMode.CreateNew, FileAccess.Write))
+        
+        // Write file to disk FIRST, before adding to database
+        try
         {
-            stream.Position = 0;
-            await stream.CopyToAsync(fs);
-            await fs.FlushAsync();
+            using (var fs = new FileStream(destPath, FileMode.CreateNew, FileAccess.Write))
+            {
+                stream.Position = 0;
+                await stream.CopyToAsync(fs);
+                await fs.FlushAsync();
+            }
+            
+            // Verify file was created
+            if (!File.Exists(destPath))
+            {
+                _logger?.LogError("File verification failed - file does not exist after write: {Path}", destPath);
+                throw new InvalidOperationException($"File was not created at {destPath}");
+            }
+            
+            var fileInfo = new FileInfo(destPath);
+            _logger?.LogInformation("Redacted file written successfully: {Path}, Size: {Size} bytes", destPath, fileInfo.Length);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to write redacted file to disk: {Path}", destPath);
+            throw;
         }
 
+        // Now add to database AFTER file is safely on disk
+        _db.Documents.Add(newDoc);
         await _db.SaveChangesAsync();
+        _logger?.LogInformation("Redacted document created with id={Id}, fileName={FileName}", newDoc.Id, newDoc.FileName);
 
         try
         {
@@ -572,44 +597,41 @@ public class DocumentService : IDocumentService
             _logger?.LogWarning("Redacted copy still contains {Count} sensitive items; leaving redacted copy in place for file {File}", detected.Count, destPath);
         }
 
-        // Delete source document and any duplicates with same filename to prevent duplicate entries
+        // Delete source document only (the one being redacted)
+        // But only if it's NOT already a redacted copy - keep previous redactions
         try
         {
-            // Find all documents with same filename and owner (excluding the newly created one)
-            var duplicates = await _db.Documents
-                .Where(d => d.Id != newDoc.Id 
-                    && d.OwnerId == originalOwnerId
-                    && d.FileName == fileName)
-                .ToListAsync();
-            
-            // Also include the source document being redacted
             var sourceDoc = await _db.Documents.FindAsync(id);
-            if (sourceDoc != null && !duplicates.Any(d => d.Id == id))
+            if (sourceDoc != null)
             {
-                duplicates.Add(sourceDoc);
-            }
-
-            foreach (var doc in duplicates)
-            {
-                // Delete physical file
-                var filePath = Directory.GetFiles(_storageRoot, $"{doc.Id}_*").FirstOrDefault();
-                if (filePath != null && File.Exists(filePath))
+                // Only delete if the source document is NOT already redacted
+                // (i.e., doesn't have "-redacted" in the filename)
+                var isSourceAlreadyRedacted = sourceDoc.FileName.Contains("-redacted", StringComparison.OrdinalIgnoreCase);
+                
+                if (!isSourceAlreadyRedacted)
                 {
-                    File.Delete(filePath);
-                    _logger?.LogInformation("Deleted duplicate/source file: {Path}", filePath);
-                }
+                    // Delete physical file
+                    var filePath = Directory.GetFiles(_storageRoot, $"{id}_*").FirstOrDefault();
+                    if (filePath != null && File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                        _logger?.LogInformation("Deleted original source file being redacted: {Path}", filePath);
+                    }
 
-                // Remove from database
-                _db.Documents.Remove(doc);
+                    // Remove from database
+                    _db.Documents.Remove(sourceDoc);
+                    await _db.SaveChangesAsync();
+                    _logger?.LogInformation("Deleted original source document: {Id}", id);
+                }
+                else
+                {
+                    _logger?.LogInformation("Skipped deletion of already-redacted source document: {Id} (filename: {FileName})", id, sourceDoc.FileName);
+                }
             }
-            
-            await _db.SaveChangesAsync();
-            _logger?.LogInformation("Deleted {Count} duplicate/source documents", duplicates.Count);
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Failed to delete duplicate documents after redaction: Id={Id}", id);
-            // Don't fail the redaction operation if deletion fails; redacted copy is safely stored
+            _logger?.LogWarning(ex, "Failed to delete source document after redaction: Id={Id}", id);
         }
 
         return new Models.UploadResult(true, "Redacted copy created", newDoc, detected);

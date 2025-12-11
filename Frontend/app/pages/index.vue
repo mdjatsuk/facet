@@ -322,7 +322,7 @@ function selectPolicy(id: string) {
   selectedPolicyId.value = id
 }
 
-onMounted(() => 
+onMounted(async () => 
 {
   try {
     policies.value = JSON.parse(localStorage.getItem(policiesKey.value) || '[]')
@@ -336,13 +336,60 @@ onMounted(() =>
   
   // Special handling for direct docId navigation (mobile redact flow only)
   // Only use query docId if we're clearly coming from mobile (no fromSensitive flag)
-  if (initialDocId && !fromSensitive && !docs.value.length) {
+  if (initialDocId && !fromSensitive) {
     console.log('[onMounted] Direct docId in query (mobile):', initialDocId)
-    selectedId.value = initialDocId
-    // Load full document list and select this one so previous
-    // redacted documents remain visible in the list.
-    refresh(initialDocId)
-    // Clean up query parameter once refresh is triggered
+    
+    // Clear any previous selectedId and docs to prevent stale references
+    selectedId.value = null
+    docs.value = []
+    
+    // Check if there's a new redacted document in sessionStorage (from sensitive-data.vue)
+    const storedNewDoc = sessionStorage.getItem('newRedactedDoc')
+    if (storedNewDoc) {
+      try {
+        const { newDoc, detectedItems, oldDocId } = JSON.parse(storedNewDoc)
+        sessionStorage.removeItem('newRedactedDoc')
+        
+        const parsedDocId = newDoc?.id
+        if (parsedDocId) {
+          // Load the docs first
+          await refresh()
+          
+          // If an old doc id is provided, remove it to avoid duplicates
+          if (oldDocId) {
+            docs.value = docs.value.filter(d => d.id !== oldDocId)
+          }
+          // Add the new doc to the list
+          const existingIdx = docs.value.findIndex(d => d.id === parsedDocId)
+          if (existingIdx === -1) {
+            docs.value.unshift(newDoc)
+          } else {
+            docs.value[existingIdx] = newDoc
+          }
+          // Set detected items
+          if (detectedItems && detectedItems.length > 0) {
+            setDetected(parsedDocId, detectedItems)
+          }
+          // Select the new document
+          selectedId.value = parsedDocId
+          console.log('[onMounted] Restored redacted doc from sessionStorage:', parsedDocId)
+          
+          // Clean up query parameter
+          router.replace({ path: '/', query: {} })
+          return
+        }
+      } catch (e) {
+        console.error('Failed to parse newRedactedDoc from sessionStorage', e)
+        sessionStorage.removeItem('newRedactedDoc')
+      }
+    }
+    
+    // If no sessionStorage data, load normally
+    await refresh(initialDocId)
+    // Only set selectedId after refresh completes to ensure doc exists
+    if (initialDocId && docs.value.find(d => d.id === initialDocId)) {
+      selectedId.value = initialDocId
+    }
     router.replace({ path: '/', query: {} })
 
     return
@@ -377,7 +424,7 @@ onMounted(() =>
     }
     // Refresh the full document list and select this document
     // instead of replacing the list with a single item.
-    refresh(initialDocId)
+    await refresh(initialDocId)
     // Clean up query parameter
     router.replace({ path: '/', query: {} })
 
@@ -417,14 +464,14 @@ onMounted(() =>
     }
     
     // Refresh to get the document list and select the returned docId
-    refresh(returnToDocId)
+    await refresh(returnToDocId)
     return
   }
   
   // If not returning from sensitive page, do normal refresh
   if (!fromSensitive) {
     const fallbackDocId = (route.query.docId as string) || undefined
-    refresh(fallbackDocId)
+    await refresh(fallbackDocId)
     // After refresh, verify that selectedId is still valid
     // If it's set but document not found, it will be reset by refresh()
     // But we want to keep it if document exists

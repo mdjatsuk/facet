@@ -60,12 +60,13 @@ public class DocumentsController : ControllerBase
     {
         var doc = _svc.GetAsync(id).GetAwaiter().GetResult();
         var userId = GetCurrentUserId();
-        if (doc is null) return NotFound();
+        if (doc is null) return NotFound("Document not found in database");
         // Allow access if: 1) user is authenticated and owns the document, OR 2) document has no owner (temporary/anonymous uploads)
-        if (userId is not null && doc.OwnerId != userId && doc.OwnerId is not null) return NotFound();
+        if (userId is not null && doc.OwnerId != userId && doc.OwnerId is not null) 
+            return NotFound($"Access denied: user={userId}, owner={doc.OwnerId}");
 
         var res = _svc.GetFile(id);
-        if (res is null) return NotFound();
+        if (res is null) return NotFound($"File not found for document {id}");
 
         var fileName = res.Value.FileName ?? "file";
         var encoded = Uri.EscapeDataString(fileName);
