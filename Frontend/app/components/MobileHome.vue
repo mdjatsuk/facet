@@ -1,16 +1,34 @@
 <script setup lang="ts">
-import type { Document } from '../types'
+import type { Document, RiskInfo } from '../types'
 
 const props = defineProps<{ 
   stagedDoc: Document | null,
   selectedDoc: Document | null,
-  uniqueTypes: string[]
+  uniqueTypes: string[],
+  riskByDoc?: Record<string, RiskInfo>
 }>()
 
 const emit = defineEmits<{
   (e: 'uploaded', payload: any): void
   (e: 'discard-staged'): void
 }>()
+
+function riskFor(id?: string | null) {
+  if (!id) return null
+  return props.riskByDoc?.[id] || null
+}
+
+function riskClass(level: RiskInfo['level']) {
+  if (level === 'high') return 'bg-red-100 text-red-700 border border-red-200'
+  if (level === 'medium') return 'bg-orange-100 text-orange-700 border border-orange-200'
+  return 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+}
+
+function dotClass(level: RiskInfo['level']) {
+  if (level === 'high') return 'bg-red-500'
+  if (level === 'medium') return 'bg-orange-500'
+  return 'bg-emerald-500'
+}
 </script>
 
 <template>
@@ -28,7 +46,16 @@ const emit = defineEmits<{
           </svg>
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-semibold text-slate-900 break-words mb-1">{{ props.stagedDoc.fileName }}</div>
+          <div class="text-sm font-semibold text-slate-900 break-words mb-1 flex items-center gap-2">
+            <span class="truncate">{{ props.stagedDoc.fileName }}</span>
+            <span v-if="riskFor(props.stagedDoc.id)" :class="['inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide', riskClass(riskFor(props.stagedDoc.id)?.level as RiskInfo['level'])]">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.29 3.86l-7.6 13.21A1 1 0 003.42 19h17.16a1 1 0 00.86-1.5L13.84 3.86a1 1 0 00-1.72 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01" />
+              </svg>
+              <span class="whitespace-nowrap">{{ $t(`documents.risk.${riskFor(props.stagedDoc.id)?.level}`) }}</span>
+            </span>
+          </div>
           <div class="text-xs text-slate-500">
             {{ new Date(props.stagedDoc.uploadedAt).toLocaleString() }}
           </div>
@@ -62,7 +89,16 @@ const emit = defineEmits<{
           </svg>
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-semibold text-slate-900 break-words mb-1">{{ props.selectedDoc.fileName }}</div>
+          <div class="text-sm font-semibold text-slate-900 break-words mb-1 flex items-center gap-2">
+            <span class="truncate">{{ props.selectedDoc.fileName }}</span>
+            <span v-if="riskFor(props.selectedDoc.id)" :class="['inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide', riskClass(riskFor(props.selectedDoc.id)?.level as RiskInfo['level'])]">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.29 3.86l-7.6 13.21A1 1 0 003.42 19h17.16a1 1 0 00.86-1.5L13.84 3.86a1 1 0 00-1.72 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01" />
+              </svg>
+              <span class="whitespace-nowrap">{{ $t(`documents.risk.${riskFor(props.selectedDoc.id)?.level}`) }}</span>
+            </span>
+          </div>
           <div class="text-xs text-slate-500">
             {{ new Date(props.selectedDoc.uploadedAt).toLocaleString() }}
           </div>

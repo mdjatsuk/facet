@@ -12,7 +12,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDetected } from '../composables/useDetected'
 import { useSelection } from '../composables/useSelection'
-import type { Document, SensitiveItem } from '../types'
+import type { Document, SensitiveItem, RiskInfo, RiskLevel } from '../types'
 // LanguageSwitcher component is auto-registered (Nuxt components)
 
 const { get, del, post } = useApi()
@@ -25,7 +25,7 @@ const selectedId = ref<string | null>(null)
 // Staged upload: shown in preview until Apply Changes creates redacted copy
 const stagedDoc = ref<Document | null>(null)
 
-const { setDetected, getDetected, clearDetected } = useDetected()
+const { setDetected, getDetected, clearDetected, documentDetected } = useDetected()
 
 const policies = ref<{ id: string, name: string, options: Record<string, boolean> }[]>([])
 const selectedPolicyId = ref<string | null>(null)
@@ -47,6 +47,45 @@ const currentDetected = computed(() => {
   return getDetected(docId) || []
 })
 const uniqueTypes = computed(() => [...new Set(currentDetected.value.map(d => d.type))])
+
+const riskWeights: Record<string, number> = {
+  email: 1,
+  phone: 1,
+  id: 3,
+  iban: 3,
+  financialinfo: 3,
+}
+
+function computeRiskScore(items: SensitiveItem[]): number {
+  let score = 0
+  for (const item of items || []) {
+    const key = (item?.type || '').toLowerCase()
+    const weight = riskWeights[key] ?? 1
+    score += weight
+  }
+  return score
+}
+
+function levelForScore(score: number): RiskLevel {
+  if (score >= 10) return 'high'
+  if (score >= 4) return 'medium'
+  return 'low'
+}
+
+const riskByDoc = computed<Record<string, RiskInfo>>(() => {
+  const ids = new Set<string>()
+  docs.value.forEach(d => d?.id && ids.add(d.id))
+  if (stagedDoc.value?.id) ids.add(stagedDoc.value.id)
+
+  const detectedMap = documentDetected.value
+  const result: Record<string, RiskInfo> = {}
+  ids.forEach(id => {
+    const items = detectedMap.get(id) || []
+    const score = computeRiskScore(items)
+    result[id] = { score, level: levelForScore(score) }
+  })
+  return result
+})
 
 const route = useRoute()
 const notice = ref<string | null>(null)
@@ -82,7 +121,9 @@ const activeOptions = computed(() => {
 async function refresh(selectNewId?: string) {
   // For authenticated users, fetch from API
   if (isAuthenticated.value) {
-    docs.value = await get<Document[]>('documents')
+    const cached = loadDocsCache()
+    const fromApi = await get<Document[]>('documents')
+    docs.value = dedupeById([...(fromApi || []), ...cached])
   } else {
     // For anonymous users, load documents from localStorage
     const anonDocsKey = 'anonDocs'
@@ -100,6 +141,7 @@ async function refresh(selectNewId?: string) {
   }
   // Ensure uniqueness by id to avoid duplicates
   docs.value = dedupeById(docs.value)
+  saveDocsCache(docs.value)
   
   if (selectNewId) {
     selectedId.value = selectNewId
@@ -123,13 +165,27 @@ function viewPolicy(id: string) {
 }
 
 async function onDelete(id: string) {
-  await del(`documents/${id}`)
+  try {
+    await del(`documents/${id}`)
+  } catch (e: any) {
+    const status = e?.response?.status || e?.status
+    if (status !== 404) {
+      console.warn('Delete failed', e)
+    }
+    // Treat 404 as already deleted; continue cleanup
+  }
+  // Local cleanup regardless of server outcome
   clearDetected(id)
-  // Remove from anonymous docs if not authenticated
   if (!isAuthenticated.value) {
     removeAnonDoc(id)
   }
-  await refresh() 
+  // Remove from list and persist cache
+  docs.value = docs.value.filter(d => d.id !== id)
+  saveDocsCache(docs.value)
+  // Adjust selection if needed
+  if (selectedId.value === id) {
+    selectedId.value = docs.value[0]?.id || null
+  }
 }
 
 function onUploaded(payload: { document: Document, detected?: SensitiveItem[] }) {
@@ -170,6 +226,27 @@ const userInitials = computed(() => {
 })
 const stagedDocKey = computed(() => `stagedDoc_${currentUsername.value ?? 'anon'}`)
 const policiesKey = computed(() => `policies_${currentUsername.value ?? 'anon'}`)
+const docsKey = computed(() => `docs_${currentUsername.value ?? 'anon'}`)
+
+function saveDocsCache(list: Document[]) {
+  try {
+    localStorage.setItem(docsKey.value, JSON.stringify(list))
+  } catch (e) {
+    console.warn('Failed to cache docs', e)
+  }
+}
+
+function loadDocsCache(): Document[] {
+  try {
+    const raw = localStorage.getItem(docsKey.value)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as Document[]
+    return Array.isArray(parsed) ? parsed : []
+  } catch (e) {
+    console.warn('Failed to read docs cache', e)
+    return []
+  }
+}
 
 // Persist stagedDoc to localStorage
 watch(stagedDoc, (newVal) => {
@@ -180,8 +257,16 @@ watch(stagedDoc, (newVal) => {
   }
 }, { deep: true })
 
+watch(docs, (val) => {
+  saveDocsCache(dedupeById(val))
+}, { deep: true })
+
 // Restore stagedDoc from localStorage on mount
 onMounted(() => {
+  const cachedDocs = loadDocsCache()
+  if (cachedDocs.length > 0 && docs.value.length === 0) {
+    docs.value = dedupeById(cachedDocs)
+  }
   const saved = localStorage.getItem(stagedDocKey.value)
   if (saved) {
     try {
@@ -204,8 +289,8 @@ onMounted(() => {
     const oldDocId = detail.oldDocId
     const detectedItems = detail.detectedItems || []
 
-    // Remove old doc if provided
-    if (oldDocId) {
+    // Remove old doc if provided and different
+    if (oldDocId && oldDocId !== parsedDocId) {
       docs.value = docs.value.filter(d => d.id !== oldDocId)
     }
     // Insert or replace new doc
@@ -474,6 +559,11 @@ watch(currentUsername, () => {
     selectedId.value = savedSelectedId
     console.log('[currentUsername watch] Restored selectedId:', savedSelectedId)
   }
+
+  const cachedDocs = loadDocsCache()
+  if (cachedDocs.length > 0) {
+    docs.value = dedupeById(cachedDocs)
+  }
 })
 
 async function usePolicy(id?: string) {
@@ -552,13 +642,19 @@ async function applySelected() {
       setDetected(newDocId, detectedItems)
     }
     
-    // Add the new document to the docs list immediately
-    if (!docs.value.find(d => d.id === newDocId)) {
+    // Add or update the document in the list
+    const existingIdx = docs.value.findIndex(d => d.id === newDocId)
+    if (existingIdx === -1) {
       docs.value.unshift(newDoc)
+    } else {
+      docs.value[existingIdx] = newDoc
     }
     
-    // Remove the old document from docs list (backend deletes it)
-    docs.value = docs.value.filter(d => d.id !== targetId)
+    // Remove the old document from docs list only if id changed
+    if (newDocId !== targetId) {
+      docs.value = docs.value.filter(d => d.id !== targetId)
+    }
+    saveDocsCache(docs.value)
     
     // If this was a staged document, clear it immediately
     if (stagedDoc.value?.id === targetId) {
@@ -654,6 +750,7 @@ function removeAnonDoc(id: string) {
         :policies="policies"
         :selected-id="selectedId"
         :selected-policy-id="selectedPolicyId"
+        :risk-by-doc="riskByDoc"
         @select-doc="(id) => { selectedId = id }"
         @delete-doc="onDelete"
         @select-policy="selectPolicy"
@@ -729,6 +826,7 @@ function removeAnonDoc(id: string) {
           :stagedDoc="stagedDoc"
           :selectedDoc="selectedDoc as any"
           :uniqueTypes="uniqueTypes"
+          :riskByDoc="riskByDoc"
           @uploaded="onUploaded"
           @discard-staged="discardStaged"
         />
@@ -750,6 +848,7 @@ function removeAnonDoc(id: string) {
           :viewedPolicy="viewedPolicy"
           :activeOptions="activeOptions"
           :optionLabels="optionLabels"
+          :riskByDoc="riskByDoc"
           @uploaded="onUploaded"
           @apply-selected="applySelected"
           @discard-staged="discardStaged"

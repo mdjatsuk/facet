@@ -36,7 +36,13 @@
     "download": "Laadi alla",
     "preview": "Eelvaade",
     "deleteConfirm": "Kas olete kindel, et soovite selle dokumendi kustutada?",
-    "deleteSuccess": "Dokument on edukalt kustutatud"
+    "deleteSuccess": "Dokument on edukalt kustutatud",
+    "risk": {
+      "label": "Risk",
+      "low": "Madal",
+      "medium": "Keskmine",
+      "high": "Kõrge"
+    }
   },
   "sensitiveData": {
     "title": "Tundlikud andmed",

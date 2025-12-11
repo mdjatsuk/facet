@@ -114,14 +114,14 @@
           <div class="p-4 border-b border-slate-100">
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center justify-between">
               <span>{{ $t('documents.title') || 'Documents' }}</span>
-              <span class="text-primary">{{ docs?.length || 0 }}</span>
+              <span class="text-primary">{{ uniqueDocs.length }}</span>
             </div>
             <div class="space-y-1 max-h-64 overflow-y-auto">
-              <div v-if="!docs || docs.length === 0" class="text-xs text-slate-400 text-center py-4">
+              <div v-if="uniqueDocs.length === 0" class="text-xs text-slate-400 text-center py-4">
                 {{ $t('documents.noDocuments') || 'No documents yet' }}
               </div>
               <button
-                v-for="d in docs"
+                v-for="d in uniqueDocs"
                 :key="d.id"
                 @click="selectDoc(d.id)"
                 :class="[
@@ -133,7 +133,16 @@
               >
                 <div class="flex items-start justify-between gap-2">
                   <div class="flex-1 min-w-0">
-                    <div class="truncate font-medium text-xs">{{ d.fileName }}</div>
+                    <div class="flex items-center gap-2 min-w-0">
+                      <div class="truncate font-medium text-xs">{{ d.fileName }}</div>
+                      <span v-if="riskFor(d.id)" :class="['inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide', riskClass(riskFor(d.id)?.level as RiskInfo['level'])]">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M10.29 3.86l-7.6 13.21A1 1 0 003.42 19h17.16a1 1 0 00.86-1.5L13.84 3.86a1 1 0 00-1.72 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01" />
+                        </svg>
+                        <span class="whitespace-nowrap">{{ t(`documents.risk.${riskFor(d.id)?.level}`) }}</span>
+                      </span>
+                    </div>
                     <div class="text-xs text-slate-400 mt-0.5">{{ (d.sizeBytes/1024).toFixed(1) }} KB</div>
                   </div>
                   <button
@@ -222,13 +231,14 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '~/composables/useAuth'
 import LanguageSwitcher from './LanguageSwitcher.vue'
-import type { Document } from '~/types'
+import type { Document, RiskInfo } from '~/types'
 
 const props = defineProps<{
   docs?: Document[]
   policies?: { id: string, name: string, options: Record<string, boolean> }[]
   selectedId?: string | null
   selectedPolicyId?: string | null
+  riskByDoc?: Record<string, RiskInfo>
 }>()
 
 const emit = defineEmits<{
@@ -243,7 +253,7 @@ const open = ref(false)
 const showLanguageMenu = ref(false)
 const router = useRouter()
 const { logOut, isAuthenticated, currentUsername, currentRole } = useAuth()
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 
 const languageList = [
   { code: 'en', short: 'Eng', name: 'English' },
@@ -252,6 +262,18 @@ const languageList = [
 ]
 
 const currentLanguageCode = computed(() => locale.value)
+
+// Deduplicate documents by id to avoid duplicates in the mobile menu
+const uniqueDocs = computed<Document[]>(() => {
+  const seen = new Set<string>()
+  const out: Document[] = []
+  for (const d of (props.docs || [])) {
+    if (!d?.id || seen.has(d.id)) continue
+    seen.add(d.id)
+    out.push(d)
+  }
+  return out
+})
 
 const userInitials = computed(() => {
   const name = currentUsername.value || ''
@@ -296,6 +318,22 @@ function deletePolicy(id: string) {
 function usePolicyHandler() {
   emit('usePolicy')
   open.value = false
+}
+
+function riskFor(id: string) {
+  return props.riskByDoc?.[id]
+}
+
+function riskClass(level: RiskInfo['level']) {
+  if (level === 'high') return 'bg-red-100 text-red-700 border border-red-200'
+  if (level === 'medium') return 'bg-orange-100 text-orange-700 border border-orange-200'
+  return 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+}
+
+function dotClass(level: RiskInfo['level']) {
+  if (level === 'high') return 'bg-red-500'
+  if (level === 'medium') return 'bg-orange-500'
+  return 'bg-emerald-500'
 }
 </script>
 

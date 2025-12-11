@@ -40,12 +40,29 @@ async function loadDocument() {
     router.push('/')
     return
   }
-  try {
-    doc.value = await get<Document>(`documents/${docId.value}`)
-  } catch (e) {
-    console.error('Failed to load document', e)
-    router.push('/')
+  // Retry a few times on 404 for freshly-created docs (mobile flow)
+  const maxAttempts = 5
+  let attempt = 0
+  while (attempt < maxAttempts) {
+    try {
+      doc.value = await get<Document>(`documents/${docId.value}`)
+      return
+    } catch (e: any) {
+      const status = e?.response?.status || e?.status || e?.data?.status
+      if (status === 404) {
+        attempt++
+        if (attempt >= maxAttempts) {
+          console.error('Failed to load document after retries', e)
+          break
+        }
+        await new Promise(r => setTimeout(r, 400))
+        continue
+      }
+      console.error('Failed to load document', e)
+      break
+    }
   }
+  router.push('/')
 }
 
 async function applyChanges() {
