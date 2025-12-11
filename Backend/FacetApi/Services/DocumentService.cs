@@ -261,7 +261,13 @@ public class DocumentService : IDocumentService
         }
 
         ms.Position = 0;
-        var outName = Path.GetFileNameWithoutExtension(originalFileName) + "-redacted.docx";
+        // Avoid creating -redacted-redacted filenames
+        var baseFileName = Path.GetFileNameWithoutExtension(originalFileName);
+        if (!baseFileName.EndsWith("-redacted"))
+        {
+            baseFileName += "-redacted";
+        }
+        var outName = baseFileName + ".docx";
         return (ms, outName);
     }
 
@@ -460,7 +466,13 @@ public class DocumentService : IDocumentService
             await writer.WriteAsync(text);
             await writer.FlushAsync();
             ms.Position = 0;
-            var outName = Path.GetFileNameWithoutExtension(doc.FileName) + "-redacted.txt";
+            // Avoid creating -redacted-redacted filenames
+            var baseFileName = Path.GetFileNameWithoutExtension(doc.FileName);
+            if (!baseFileName.EndsWith("-redacted"))
+            {
+                baseFileName += "-redacted";
+            }
+            var outName = baseFileName + ".txt";
             return (ms, outName);
         }
         
@@ -488,6 +500,7 @@ public class DocumentService : IDocumentService
 
     public async Task<Models.UploadResult> CreateRedactedCopyAsync(Guid id, List<string> valuesToHide)
     {
+        List<Models.SensitiveItem>? detected = null;
         (Stream Stream, string FileName)? red = null;
         try
         {
@@ -536,7 +549,6 @@ public class DocumentService : IDocumentService
 
         await _db.SaveChangesAsync();
 
-        List<Models.SensitiveItem>? detected = null;
         try
         {
             if (contentType == "text/plain")
@@ -560,29 +572,43 @@ public class DocumentService : IDocumentService
             _logger?.LogWarning("Redacted copy still contains {Count} sensitive items; leaving redacted copy in place for file {File}", detected.Count, destPath);
         }
 
-        // Delete the original document (security: do not store original uploads)
+        // Delete source document and any duplicates with same filename to prevent duplicate entries
         try
         {
-            var originalDoc = await _db.Documents.FindAsync(id);
-            if (originalDoc != null)
+            // Find all documents with same filename and owner (excluding the newly created one)
+            var duplicates = await _db.Documents
+                .Where(d => d.Id != newDoc.Id 
+                    && d.OwnerId == originalOwnerId
+                    && d.FileName == fileName)
+                .ToListAsync();
+            
+            // Also include the source document being redacted
+            var sourceDoc = await _db.Documents.FindAsync(id);
+            if (sourceDoc != null && !duplicates.Any(d => d.Id == id))
             {
-                // Delete physical file from storage
-                var originalPath = Path.Combine(_storageRoot, $"{originalDoc.Id}_{originalDoc.FileName}");
-                if (File.Exists(originalPath))
+                duplicates.Add(sourceDoc);
+            }
+
+            foreach (var doc in duplicates)
+            {
+                // Delete physical file
+                var filePath = Directory.GetFiles(_storageRoot, $"{doc.Id}_*").FirstOrDefault();
+                if (filePath != null && File.Exists(filePath))
                 {
-                    File.Delete(originalPath);
-                    _logger?.LogInformation("Deleted original document file: {Path}", originalPath);
+                    File.Delete(filePath);
+                    _logger?.LogInformation("Deleted duplicate/source file: {Path}", filePath);
                 }
 
-                // Delete from database
-                _db.Documents.Remove(originalDoc);
-                await _db.SaveChangesAsync();
-                _logger?.LogInformation("Deleted original document record from database: Id={Id}", id);
+                // Remove from database
+                _db.Documents.Remove(doc);
             }
+            
+            await _db.SaveChangesAsync();
+            _logger?.LogInformation("Deleted {Count} duplicate/source documents", duplicates.Count);
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Failed to delete original document after redaction: Id={Id}", id);
+            _logger?.LogWarning(ex, "Failed to delete duplicate documents after redaction: Id={Id}", id);
             // Don't fail the redaction operation if deletion fails; redacted copy is safely stored
         }
 

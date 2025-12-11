@@ -51,7 +51,9 @@ export function useDetected() {
   }
 
   function setDetected(docId: string, items: SensitiveItem[]) {
-    documentDetected.value.set(docId, items)
+    const next = new Map(documentDetected.value)
+    next.set(docId, items)
+    documentDetected.value = next
     save()
   }
 
@@ -60,9 +62,11 @@ export function useDetected() {
   }
 
   function clearDetected(docId: string) {
-    documentDetected.value.delete(docId)
+    const next = new Map(documentDetected.value)
+    next.delete(docId)
+    documentDetected.value = next
     save()
   }
 
-  return { setDetected, getDetected, clearDetected }
+  return { setDetected, getDetected, clearDetected, documentDetected }
 }

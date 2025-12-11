@@ -6,6 +6,13 @@ export interface Document {
   uploadedAt: string
 }
 
+export type RiskLevel = 'low' | 'medium' | 'high'
+
+export interface RiskInfo {
+  score: number
+  level: RiskLevel
+}
+
 export interface SensitiveItem {
   type: string
   value: string

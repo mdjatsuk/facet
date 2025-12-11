@@ -234,9 +234,11 @@ async function applyChanges() {
         storedIds.push(newDocId)
         localStorage.setItem(anonDocsKey, JSON.stringify(storedIds))
       }
-      // Remove old document from anonymous docs
-      const filtered = storedIds.filter(id => id !== docId.value)
-      localStorage.setItem(anonDocsKey, JSON.stringify(filtered))
+      // Remove old document from anonymous docs only if id changed
+      if (newDocId !== docId.value) {
+        const filtered = storedIds.filter(id => id !== docId.value)
+        localStorage.setItem(anonDocsKey, JSON.stringify(filtered))
+      }
     }
     
     // Store the new doc and detected items in sessionStorage to pass to home page

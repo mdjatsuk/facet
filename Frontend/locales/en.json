@@ -36,7 +36,13 @@
     "download": "Download",
     "preview": "Preview",
     "deleteConfirm": "Are you sure you want to delete this document?",
-    "deleteSuccess": "Document deleted successfully"
+    "deleteSuccess": "Document deleted successfully",
+    "risk": {
+      "label": "Risk",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    }
   },
   "sensitiveData": {
     "title": "Sensitive Data",
