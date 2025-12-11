@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Document } from '~/types'
 
@@ -11,6 +12,19 @@ const emit = defineEmits<{
 }>()
 
 const api = useRuntimeConfig().public.apiBase as string
+
+// Ensure each document appears only once in the list (by id)
+const uniqueDocs = computed(() => {
+  const seen = new Set<string>()
+  const result: Document[] = []
+  for (const d of props.docs) {
+    if (!d?.id || seen.has(d.id)) continue
+    seen.add(d.id)
+    result.push(d)
+  }
+  return result
+})
+
 function cls(id: string) { 
   return ['listbox-item', props.selectedId === id ? 'listbox-item-active' : ''].join(' ') 
 }
@@ -27,7 +41,7 @@ function cls(id: string) {
              {{ $t('documents.redactedNoDocuments') }}
     </div>
 
-      <div v-for="d in docs" :key="d.id" :class="cls(d.id)" @click="$emit('select', d.id)">
+      <div v-for="d in uniqueDocs" :key="d.id" :class="cls(d.id)" @click="$emit('select', d.id)">
         <div class="flex flex-col flex-1 min-w-0 mr-2">
           <div class="text-sm sm:text-base font-medium truncate">{{ d.fileName }}</div>
           <div class="text-xs text-slate-400">

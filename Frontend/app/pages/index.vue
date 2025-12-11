@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n'
 import { useDetected } from '../composables/useDetected'
 import { useSelection } from '../composables/useSelection'
 import type { Document, SensitiveItem } from '../types'
+// LanguageSwitcher component is auto-registered (Nuxt components)
 
 const { get, del, post } = useApi()
 const apiBase = useRuntimeConfig().public.apiBase as string
@@ -97,6 +98,8 @@ async function refresh(selectNewId?: string) {
     }
     docs.value = loadedDocs
   }
+  // Ensure uniqueness by id to avoid duplicates
+  docs.value = dedupeById(docs.value)
   
   if (selectNewId) {
     selectedId.value = selectNewId
@@ -105,6 +108,14 @@ async function refresh(selectNewId?: string) {
     selectedId.value = docs.value[0]?.id || null
   }
   // Don't override selectedId if it's already set and found in docs
+}
+
+function dedupeById(arr: Document[]): Document[] {
+  const byId = new Map<string, Document>()
+  for (const d of arr) {
+    if (d?.id) byId.set(d.id, d)
+  }
+  return Array.from(byId.values())
 }
 
 function viewPolicy(id: string) {
@@ -148,22 +159,6 @@ watch(selectedId, (newVal) => {
 const { currentUsername, isAuthenticated, logOut, currentRole } = useAuth()
 const { locale } = useI18n()
 
-const showLanguageMenu = ref(false)
-const languageList = [
-  { code: 'en', short: 'Eng', name: 'English' },
-  { code: 'ru', short: 'Рус', name: 'Русский' },
-  { code: 'est', short: 'Est', name: 'Eesti' }
-]
-
-const changeLanguage = (code: string) => {
-  locale.value = code
-  if (process.client) {
-    localStorage.setItem('language', code)
-    document.documentElement.lang = code
-  }
-  showLanguageMenu.value = false
-}
-
 const userInitials = computed(() => {
   const name = currentUsername.value || ''
   if (!name) return ''
@@ -198,13 +193,39 @@ onMounted(() => {
     }
   }
   
-  // Close language menu when clicking outside
-  document.addEventListener('click', (e: MouseEvent) => {
-    const target = e.target as HTMLElement
-    if (!target.closest('[data-language-menu]')) {
-      showLanguageMenu.value = false
+})
+
+// Listen for realtime redaction completion events to update list without reload
+onMounted(() => {
+  const handler = (e: Event) => {
+    const detail = (e as CustomEvent).detail as { newDoc: Document, detectedItems?: SensitiveItem[], oldDocId?: string }
+    if (!detail?.newDoc?.id) return
+    const parsedDocId = detail.newDoc.id
+    const oldDocId = detail.oldDocId
+    const detectedItems = detail.detectedItems || []
+
+    // Remove old doc if provided
+    if (oldDocId) {
+      docs.value = docs.value.filter(d => d.id !== oldDocId)
     }
-  })
+    // Insert or replace new doc
+    const existingIdx = docs.value.findIndex(d => d.id === parsedDocId)
+    if (existingIdx === -1) {
+      docs.value.unshift(detail.newDoc)
+    } else {
+      docs.value[existingIdx] = detail.newDoc
+    }
+    // Set detected items for the new doc
+    if (detectedItems.length > 0) {
+      setDetected(parsedDocId, detectedItems)
+    }
+    // Ensure uniqueness and select it
+    docs.value = dedupeById(docs.value)
+    selectedId.value = parsedDocId
+  }
+  window.addEventListener('facet:new-redacted-doc', handler as EventListener)
+  // Cleanup on unmount
+  onUnmounted(() => window.removeEventListener('facet:new-redacted-doc', handler as EventListener))
 })
 
 function deletePolicy(id: string) {
@@ -233,22 +254,12 @@ onMounted(() =>
   if (initialDocId && !fromSensitive && !docs.value.length) {
     console.log('[onMounted] Direct docId in query (mobile):', initialDocId)
     selectedId.value = initialDocId
-    
-    // Load the new document and preserve detected items set by sensitive-data.vue
-    get<Document>(`documents/${initialDocId}`).then(doc => {
-      if (doc) {
-        console.log('[onMounted] Loaded redacted document:', doc.fileName)
-        docs.value = [doc]
-        selectedId.value = initialDocId
-        // The detected items should already be in state from sensitive-data.vue
-        // Clean up query parameter
-        router.replace({ path: '/', query: {} })
-      }
-    }).catch(e => {
-      console.error('[onMounted] Failed to load document:', initialDocId, e)
-      refresh(initialDocId)
-    })
-    
+    // Load full document list and select this one so previous
+    // redacted documents remain visible in the list.
+    refresh(initialDocId)
+    // Clean up query parameter once refresh is triggered
+    router.replace({ path: '/', query: {} })
+
     return
   } else {
     // Restore selectedId from localStorage (normal flow)
@@ -279,21 +290,12 @@ onMounted(() =>
         sessionStorage.removeItem('detectedItemsOnReturn')
       }
     }
-    
-    // Load the specific document immediately
-    get<Document>(`documents/${initialDocId}`).then(doc => {
-      if (doc) {
-        console.log('[onMounted] Loaded document:', doc.fileName)
-        docs.value = [doc]
-        selectedId.value = initialDocId
-        // Clean up query parameter
-        router.replace({ path: '/', query: {} })
-      }
-    }).catch(e => {
-      console.error('[onMounted] Failed to load document:', e)
-      refresh(initialDocId)
-    })
-    
+    // Refresh the full document list and select this document
+    // instead of replacing the list with a single item.
+    refresh(initialDocId)
+    // Clean up query parameter
+    router.replace({ path: '/', query: {} })
+
     return
   }
   
@@ -416,7 +418,7 @@ watch(() => route.query.docId, async (newDocId) => {
     const storedNewDoc = sessionStorage.getItem('newRedactedDoc')
     if (storedNewDoc) {
       try {
-        const { newDoc, detectedItems } = JSON.parse(storedNewDoc)
+        const { newDoc, detectedItems, oldDocId } = JSON.parse(storedNewDoc)
         sessionStorage.removeItem('newRedactedDoc')
         
         const parsedDocId = newDoc?.id
@@ -424,10 +426,19 @@ watch(() => route.query.docId, async (newDocId) => {
           throw new Error('No document ID in newRedactedDoc')
         }
         
-        // Add new doc to list if not already there
-        if (!docs.value.find(d => d.id === parsedDocId)) {
-          docs.value.unshift(newDoc)
+        // If an old doc id is provided, remove it to avoid duplicates
+        if (oldDocId) {
+          docs.value = docs.value.filter(d => d.id !== oldDocId)
         }
+        // Add or update the new doc in the list
+        const existingIdx = docs.value.findIndex(d => d.id === parsedDocId)
+        if (existingIdx === -1) {
+          docs.value.unshift(newDoc)
+        } else {
+          docs.value[existingIdx] = newDoc
+        }
+        // Final guard: ensure no duplicates remain
+        docs.value = dedupeById(docs.value)
         
         // Set detected items
         if (detectedItems && detectedItems.length > 0) {
@@ -604,6 +615,32 @@ async function discardStaged() {
   }
 }
 
+// Anonymous document helpers
+function saveAnonDoc(id: string) {
+  const key = 'anonDocs'
+  try {
+    const current = JSON.parse(localStorage.getItem(key) || '[]') as string[]
+    if (!current.includes(id)) {
+      current.unshift(id)
+      localStorage.setItem(key, JSON.stringify(current))
+    }
+  } catch (e) {
+    localStorage.setItem(key, JSON.stringify([id]))
+  }
+}
+
+function removeAnonDoc(id: string) {
+  const key = 'anonDocs'
+  try {
+    const current = JSON.parse(localStorage.getItem(key) || '[]') as string[]
+    const next = current.filter(x => x !== id)
+    localStorage.setItem(key, JSON.stringify(next))
+  } catch (e) {
+    // If parsing fails, just overwrite with empty
+    localStorage.setItem(key, JSON.stringify([]))
+  }
+}
+
 </script>
 
 <template>
@@ -650,28 +687,7 @@ async function discardStaged() {
             {{ $t('nav.createPolicy') }}
           </NuxtLink>
           
-          <div class="relative" data-language-menu>
-            <button @click="showLanguageMenu = !showLanguageMenu" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-xs sm:text-sm font-medium whitespace-nowrap flex items-center gap-2">
-              <span>🌐</span>
-              <span>{{ locale }}</span>
-              <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showLanguageMenu }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-            </button>
-            
-            <div v-if="showLanguageMenu" class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50" data-language-menu>
-              <button
-                v-for="lang in languageList"
-                :key="lang.code"
-                @click="changeLanguage(lang.code)"
-                class="w-full text-left px-4 py-2 text-sm transition-colors hover:bg-slate-100"
-                :class="{ 'bg-blue-50 text-blue-700 font-medium': locale === lang.code }"
-              >
-                <span class="font-semibold mr-2">{{ lang.short }}</span>
-                <span>{{ lang.name }}</span>
-              </button>
-            </div>
-          </div>
+          <LanguageSwitcher class="min-w-fit" />
             <div class="min-w-fit sm:min-w-[220px] flex items-center justify-end">
               <div class="flex items-center gap-2 sm:gap-3">
                 <div class="flex items-center gap-2">
@@ -704,153 +720,48 @@ async function discardStaged() {
       </div>
     </div>
 
-    <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 flex flex-col lg:grid gap-4 sm:gap-6 lg:grid-cols-5">
-      <section class="space-y-4 lg:col-span-1 order-1 hidden lg:block">
-        <UploadDrop @uploaded="onUploaded" />
-        <SensitiveDataBox :types="uniqueTypes" :doc-id="stagedDoc?.id || selectedId" :custom-types="customTypes" />
-        <CustomPatternSearch :doc-id="stagedDoc?.id || selectedId" @pattern-found="onPatternFound" />
-        <div class="mt-2 flex flex-row gap-2 items-center">
-          <button @click="applySelected" class="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 touch-manipulation text-sm font-bold whitespace-nowrap" :disabled="!(stagedDoc?.id || selectedId) || selectedCount === 0">
-            {{ $t('sensitiveData.apply') }}
-          </button>
-          <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
-            <span class="inline-flex items-center justify-center w-5 h-5 bg-blue-600 text-white rounded-full text-xs font-bold">{{ selectedCount }}</span>
-            <span>{{ $t('sensitiveData.selected') }}</span>
-          </div>
-        </div>
+    <!-- PAGE LAYOUT -->
+    <!-- Mobile Version: fully isolated block for clarity -->
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+      <!-- MOBILE SECTION (visible below lg breakpoint) -->
+      <section class="lg:hidden space-y-4" aria-label="Mobile Home Section">
+        <MobileHome
+          :stagedDoc="stagedDoc"
+          :selectedDoc="selectedDoc as any"
+          :uniqueTypes="uniqueTypes"
+          @uploaded="onUploaded"
+          @discard-staged="discardStaged"
+        />
       </section>
 
-      <section class="lg:col-span-3 order-2 lg:order-2">
-        <!-- Mobile Upload Area -->
-        <div class="lg:hidden mb-4">
-          <UploadDrop @uploaded="onUploaded" />
-        </div>
-
-        <!-- Mobile: Document Preview Card -->
-        <div class="lg:hidden space-y-4">
-          <!-- Staged Document -->
-          <div v-if="stagedDoc" class="bg-white border border-slate-200 rounded-lg shadow-sm p-4">
-            <div class="flex items-start gap-3 mb-3">
-              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="text-sm font-semibold text-slate-900 break-words mb-1">{{ stagedDoc.fileName }}</div>
-                <div class="text-xs text-slate-500">
-                  {{ new Date(stagedDoc.uploadedAt).toLocaleString() }}
-                </div>
-                <div class="text-xs text-slate-500">
-                  {{ (stagedDoc.sizeBytes / 1024).toFixed(2) }} KB
-                </div>
-              </div>
-            </div>
-            <div class="flex gap-2">
-              <NuxtLink 
-                :to="{ path: '/preview', query: { docId: stagedDoc.id, staged: 'true' } }"
-                class="flex-1 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 active:bg-primary/80 text-center text-sm font-medium touch-manipulation transition"
-              >
-                View & Edit
-              </NuxtLink>
-              <button 
-                @click="discardStaged" 
-                class="px-4 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 active:bg-red-200 text-sm font-medium touch-manipulation transition"
-              >
-                {{ $t('documents.delete') }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Selected Document -->
-          <div v-else-if="selectedDoc" class="bg-white border border-slate-200 rounded-lg shadow-sm p-4">
-            <div class="flex items-start gap-3 mb-3">
-              <div class="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="text-sm font-semibold text-slate-900 break-words mb-1">{{ selectedDoc.fileName }}</div>
-                <div class="text-xs text-slate-500">
-                  {{ new Date(selectedDoc.uploadedAt).toLocaleString() }}
-                </div>
-                <div class="text-xs text-slate-500">
-                  {{ (selectedDoc.sizeBytes / 1024).toFixed(2) }} KB
-                </div>
-              </div>
-            </div>
-            <NuxtLink 
-              :to="{ path: '/preview', query: { docId: selectedDoc.id } }"
-              class="block w-full px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 active:bg-primary/80 text-center text-sm font-medium touch-manipulation transition"
-            >
-              View & Edit
-            </NuxtLink>
-          </div>
-
-          <!-- No Document Selected -->
-          <div v-else class="bg-white border-2 border-dashed border-slate-200 rounded-lg p-8 text-center">
-            <svg class="w-16 h-16 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p class="text-slate-500 text-sm mb-1">No document selected</p>
-            <p class="text-slate-400 text-xs">Upload a file or select from menu</p>
-          </div>
-
-          <!-- Sensitive Data Quick Info -->
-          <div v-if="uniqueTypes.length > 0" class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <div class="flex items-center gap-2 mb-2">
-              <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span class="text-sm font-semibold text-amber-900">{{ uniqueTypes.length }} sensitive data type(s) found</span>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <span v-for="t in uniqueTypes" :key="t" class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-medium capitalize">
-                {{ t }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Desktop: Full Preview -->
-        <div class="hidden lg:block">
-          <div v-if="stagedDoc" class="mb-3 p-3 sm:p-4 bg-white border border-slate-200 rounded-lg shadow-sm">
-            <div class="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-0">
-              <div class="min-w-0 flex-1">
-                <div class="text-sm font-medium text-slate-900 break-words">{{ stagedDoc.fileName }}</div>
-                <div class="text-xs text-slate-500 mt-1">
-                  {{ new Date(stagedDoc.uploadedAt).toLocaleString() }} • {{ (stagedDoc.sizeBytes / 1024).toFixed(2) }} KB
-                </div>
-              </div>
-              <button @click="discardStaged" class="px-3 py-1.5 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 active:bg-red-700 transition touch-manipulation whitespace-nowrap">
-                {{ $t('documents.delete') }}
-              </button>
-            </div>
-          </div>
-          <PreviewPane v-if="stagedDoc || selectedDoc" :key="`${(stagedDoc || selectedDoc)?.id}`" :url="previewUrl" :contentType="previewType" :documentId="(stagedDoc || selectedDoc)?.id" />
-          <div v-else class="card p-6 w-full flex items-center justify-center muted" style="height: 842px; max-height: 80vh;">Nothing to display</div>
-        </div>
-      </section>
-
-      <section class="lg:col-span-1 order-3 space-y-4 hidden lg:block">
-        <DocListBox :docs="docs" :selected-id="selectedId" @select="(id: string) => { selectedId = id }"  @delete="onDelete" class="mb-2"/>
-  <PoliciesListBox :policies="policies" :selected-id="selectedPolicyId" @select="selectPolicy"  @view="viewPolicy" @delete="deletePolicy" @use="usePolicy" />
-        <div v-if="viewedPolicy" class="mt-2 p-3 border rounded bg-slate-50">
-        <div class="font-medium mb-1 text-sm sm:text-base">{{ viewedPolicy.name }}</div>
-        <ul class="text-xs sm:text-sm text-slate-600 list-disc pl-5">
-          <li v-for="k in activeOptions" :key="k">
-            {{ optionLabels[k] || k }}
-          </li>
-          <li v-if="activeOptions.length === 0">None</li>
-        </ul>
-        <button
-          @click="viewedPolicy = null"
-          class="mt-2 px-2 py-1 text-xs text-red-500 border rounded hover:bg-red-50 touch-manipulation"
-        >
-          Close
-        </button>
-      </div>
+      <!-- DESKTOP SECTION (visible at and above lg breakpoint) -->
+      <section class="hidden lg:block" aria-label="Desktop Home Section">
+        <DesktopHome
+          :docs="docs"
+          :policies="policies"
+          :selectedId="selectedId"
+          :selectedPolicyId="selectedPolicyId"
+          :stagedDoc="stagedDoc"
+          :uniqueTypes="uniqueTypes"
+          :selectedCount="selectedCount"
+          :previewUrl="previewUrl"
+          :previewType="previewType"
+          :documentId="(stagedDoc || selectedDoc)?.id"
+          :viewedPolicy="viewedPolicy"
+          :activeOptions="activeOptions"
+          :optionLabels="optionLabels"
+          @uploaded="onUploaded"
+          @apply-selected="applySelected"
+          @discard-staged="discardStaged"
+          @select-doc="(id: string) => { selectedId = id }"
+          @delete-doc="onDelete"
+          @select-policy="selectPolicy"
+          @view-policy="viewPolicy"
+          @delete-policy="deletePolicy"
+          @use-policy="() => usePolicy()"
+          @close-viewed-policy="() => { viewedPolicy = null }"
+          @pattern-found="onPatternFound"
+        />
       </section>
     </main>
 

@@ -4,8 +4,21 @@ import { renderAsync } from 'docx-preview'
 
 const props = defineProps<{ url: string, fullScreen?: boolean }>()
 const container = ref<HTMLElement | null>(null)
+const outerContainer = ref<HTMLElement | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+function centerPreview() {
+  const outer = outerContainer.value
+  if (!outer) return
+
+  // Center horizontally, keep top aligned
+  const maxScrollLeft = outer.scrollWidth - outer.clientWidth
+  if (maxScrollLeft > 0) {
+    outer.scrollLeft = maxScrollLeft / 2
+  }
+  outer.scrollTop = 0
+}
 
 async function loadDocument() {
   if (!container.value) return
@@ -42,8 +55,9 @@ async function loadDocument() {
       renderEndnotes: true,
       renderComments: false,
     })
-    
+
     loading.value = false
+    centerPreview()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load document'
     loading.value = false
@@ -60,7 +74,7 @@ watch(() => props.url, () => {
 </script>
 
 <template>
-  <div class="word-preview-container w-full h-full bg-gray-100">
+  <div ref="outerContainer" class="word-preview-container w-full h-full bg-gray-100">
     <div v-if="loading" class="flex items-center justify-center h-full">
       <div class="text-center">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
