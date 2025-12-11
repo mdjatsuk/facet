@@ -8,13 +8,17 @@
     "login": "Login",
     "manageUsers": "Manage users",
     "createPolicy": "Create policy",
-    "usePolicy": "Use Policy"
+    "usePolicy": "Use Policy",
+    "language": "Language",
+    "menuTitle": "Menu",
+    "quickActions": "Quick Actions"
   },
   "upload": {
     "title": "Upload Documents",
     "dragDrop": "Drag and drop files here or click to select",
     "selectFile": "Select File",
     "maxSize": "Max file size: 10MB",
+    "language": "Language",
     "allowedFormats": "Allowed formats: DOC, DOCX, TXT, PDF",
     "uploading": "Uploading...",
     "uploadSuccess": "File uploaded successfully",
@@ -25,6 +29,9 @@
     "redactedTitle": "Redacted Documents",
     "redactedNoDocuments": "No redacted documents yet",
     "noDocuments": "No documents yet",
+    "nothingToDisplay": "Nothing to display",
+    "noSelected": "No document selected",
+    "uploadOrSelect": "Upload a file or select from menu",
     "delete": "Remove",
     "download": "Download",
     "preview": "Preview",
@@ -34,7 +41,12 @@
   "sensitiveData": {
     "title": "Sensitive Data",
     "detectedTypes": "Detected",
+    "typesFound": "Types found",
     "noData": "No sensitive data detected",
+    "noDataDoc": "No sensitive data detected in this document",
+    "readyForRedaction": "Ready for redaction",
+    "detectedSensitiveTypes": "Detected Sensitive Data Types",
+    "itemsDetected": "{count} item(s) detected",
     "type": "Type",
     "value": "Value",
     "selected": "Selected",
@@ -62,17 +74,31 @@
     "sensitiveIbanData": "Sensitive IBAN Data",
     "sensitiveIdData": "Sensitive ID Data",
     "sensitivePhoneData": "Sensitive phone Data",
-    "dataTitle": "Sensitive {type} Data"
+    "dataTitle": "Sensitive {type} Data",
+    "instructions": {
+      "title": "How to redact sensitive data:",
+      "step1": "Tap on a sensitive data type above",
+      "step2": "Select items you want to redact",
+      "step3": "Return here and click \"Apply Changes\""
+    }
   },
   "preview": {
     "title": "Preview",
     "noPreview": "Unable to load preview",
-    "fullPreview": "Full Preview"
+    "fullPreview": "Full Preview",
+    "viewEdit": "View & Edit",
+    "backToPreview": "Back to Preview",
+    "back": "Back",
+    "loading": "Loading preview...",
+    "stagedDocument": "Staged Document"
   },
   "policies": {
     "title": "All Policies",
     "usePolicy": "Use Selected Policy",
     "noPolicy": "No policies yet",
+    "preview": {
+      "viewEdit": "View & Edit"
+    },
     "create": {
       "title": "Create new policy",
       "policyName": "Policy name",
@@ -81,7 +107,7 @@
       "createButton": "Create policy",
       "backButton": "Back",
       "emails": "Emails",
-      "emailsPlaceholder": "e.g., example@gmail.com, john.doe@company.com",
+      "emailsPlaceholder": "e.g., example{'@'}gmail.com, john.doe{'@'}company.com",
       "phoneNumbers": "Phone numbers",
       "phoneNumbersPlaceholder": "e.g., mobile, landline, or international formats",
       "nationalIds": "National ID numbers",
@@ -120,28 +146,28 @@
     "actions": "Actions",
     "ban": "Ban",
     "unban": "Unban",
-    "setAdmin": "Set Admin",
+    "setAdmin": "Make Admin",
     "removeAdmin": "Remove Admin",
     "manageUsers": "Manage users",
-    "back": "← Back",
-    "typeUsername": "Type username and press Enter",
+    "back": "Back",
+    "typeUsername": "Type a username and press Enter",
     "pressEnterToLoad": "Press Enter to load user info",
     "setRole": "Set role",
     "userRole": "User",
-    "setRoleButton": "Set Role",
+    "setRoleButton": "Set role",
     "banUnban": "Ban / Unban",
     "banButton": "Ban",
     "unbanButton": "Unban",
-    "bannedMessage": "Banned users cannot log in until unbanned.",
+    "bannedMessage": "Banned users cannot log in until they are unbanned.",
     "deleteAccount": "Delete account",
-    "deleteUserButton": "Delete user (permanent)"
+    "deleteUserButton": "Delete user (permanently)"
   },
-  "language": "Language",
   "customPattern": {
     "title": "Custom Pattern Search",
     "description": "Search for custom patterns",
     "placeholder": "Enter a pattern to search...",
     "button": "Search",
+    "scanning": "Scanning...",
     "noMatches": "No matches found for '{pattern}'",
     "foundMatches": "Found {count} match(es) for '{pattern}'",
     "note": "Note: Custom patterns search by value and will be applied to all occurrences in the document."

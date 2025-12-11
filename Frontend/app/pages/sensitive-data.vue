@@ -240,7 +240,11 @@ async function applyChanges() {
     }
     
     // Store the new doc and detected items in sessionStorage to pass to home page
-    sessionStorage.setItem('newRedactedDoc', JSON.stringify({ newDoc, detectedItems }))
+    // Persist info for index page to update list without duplication
+    const payload = { newDoc, detectedItems, oldDocId: docId.value }
+    sessionStorage.setItem('newRedactedDoc', JSON.stringify(payload))
+    // Also dispatch a realtime event so home page can update without reload
+    window.dispatchEvent(new CustomEvent('facet:new-redacted-doc', { detail: payload }))
     
     // ALSO set detected items directly in the state so they're available immediately
     if (detectedItems && detectedItems.length > 0) {
@@ -292,7 +296,7 @@ onMounted(() => {
             </svg>
           </button>
           <div class="flex-1 min-w-0 text-center">
-            <h1 class="text-lg font-semibold text-slate-800">Sensitive Data</h1>
+            <h1 class="text-lg font-semibold text-slate-800">{{ $t('sensitiveData.title') }}</h1>
           </div>
           <div class="w-10"></div>
         </div>
@@ -310,8 +314,8 @@ onMounted(() => {
                 </svg>
               </div>
               <div>
-                <div class="text-sm font-semibold text-slate-900">Items Selected</div>
-                <div class="text-xs text-slate-500">Ready for redaction</div>
+                <div class="text-sm font-semibold text-slate-900">{{ $t('sensitiveData.selected') }}</div>
+                <div class="text-xs text-slate-500">{{ $t('sensitiveData.readyForRedaction') || 'Ready for redaction' }}</div>
               </div>
             </div>
             <div class="text-3xl font-bold text-blue-600">{{ selectedCount }}</div>
@@ -320,13 +324,13 @@ onMounted(() => {
 
         <!-- Custom Pattern Search (Mobile Optimized) -->
         <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 mb-6">
-          <div class="flex items-center gap-2 mb-4">
+            <div class="flex items-center gap-2 mb-4">
             <svg class="w-5 h-5 text-blue-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <div>
-              <div class="text-sm font-semibold text-slate-900">Custom Pattern Search</div>
-              <div class="text-xs text-slate-500">Search for patterns in document</div>
+                <div class="text-sm font-semibold text-slate-900">{{ $t('customPattern.title') }}</div>
+                <div class="text-xs text-slate-500">{{ $t('customPattern.description') }}</div>
             </div>
           </div>
           
@@ -334,7 +338,7 @@ onMounted(() => {
             <input
               v-model="customPattern"
               type="text"
-              placeholder="Enter pattern to search..."
+              :placeholder="$t('customPattern.placeholder')"
               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
               @keyup.enter="scanCustomPattern"
             />
@@ -343,25 +347,25 @@ onMounted(() => {
               :disabled="!customPattern.trim() || isScanning"
               class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation text-sm font-medium"
             >
-              {{ isScanning ? 'Scanning...' : 'Search Pattern' }}
+              {{ isScanning ? ($t('customPattern.scanning') || 'Scanning...') : $t('customPattern.button') }}
             </button>
             <div v-if="scanError" class="text-xs text-red-600 px-2 py-1 bg-red-50 rounded">{{ scanError }}</div>
             <div v-if="scanSuccess" class="text-xs text-green-700 px-2 py-1 bg-green-50 rounded">
               <div class="font-medium">{{ scanSuccess }}</div>
-              <div class="text-xs text-slate-600 mt-1">Note: Custom patterns search by value and will be applied to all occurrences.</div>
+              <div class="text-xs text-slate-600 mt-1">{{ $t('customPattern.note') }}</div>
             </div>
           </div>
         </div>
 
         <!-- Sensitive Data Types -->
         <div class="space-y-3">
-          <h2 class="text-sm font-semibold text-slate-700 px-1">Detected Sensitive Data Types</h2>
+          <h2 class="text-sm font-semibold text-slate-700 px-1">{{ $t('sensitiveData.detectedSensitiveTypes') || 'Detected Sensitive Data Types' }}</h2>
           
           <div v-if="uniqueTypes.length === 0" class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center">
             <svg class="w-16 h-16 mx-auto text-slate-300 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            <div class="text-slate-500 text-sm">No sensitive data detected in this document</div>
+            <div class="text-slate-500 text-sm">{{ $t('sensitiveData.noDataDoc') || 'No sensitive data detected in this document' }}</div>
           </div>
 
           <div v-else class="space-y-3">
@@ -381,7 +385,7 @@ onMounted(() => {
                   <div class="flex-1 min-w-0">
                     <div class="text-sm font-semibold text-slate-900 capitalize truncate">{{ t }}</div>
                     <div class="text-xs text-slate-500">
-                      {{ currentDetected.filter(d => d.type === t).length }} item(s) detected
+                      {{ $t('sensitiveData.itemsDetected', { count: currentDetected.filter(d => d.type === t).length }) || (currentDetected.filter(d => d.type === t).length + ' item(s) detected') }}
                     </div>
                   </div>
                 </div>
@@ -400,11 +404,11 @@ onMounted(() => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div class="text-sm text-blue-900">
-              <p class="font-semibold mb-1">How to redact sensitive data:</p>
+              <p class="font-semibold mb-1">{{ $t('sensitiveData.instructions.title') || 'How to redact sensitive data:' }}</p>
               <ol class="list-decimal list-inside space-y-1 text-xs">
-                <li>Tap on a sensitive data type above</li>
-                <li>Select items you want to redact</li>
-                <li>Return here and click "Apply Changes"</li>
+                <li>{{ $t('sensitiveData.instructions.step1') || 'Tap on a sensitive data type above' }}</li>
+                <li>{{ $t('sensitiveData.instructions.step2') || 'Select items you want to redact' }}</li>
+                <li>{{ $t('sensitiveData.instructions.step3') || 'Return here and click "Apply Changes"' }}</li>
               </ol>
             </div>
           </div>
@@ -419,7 +423,7 @@ onMounted(() => {
               @click="goBack"
               class="px-4 py-3 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 active:bg-slate-300 touch-manipulation text-sm font-medium transition"
             >
-              Back to Preview
+              {{ $t('preview.backToPreview') || 'Back to Preview' }}
             </button>
             <button 
               @click="applyChanges" 

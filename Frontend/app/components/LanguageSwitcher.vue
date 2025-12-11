@@ -2,11 +2,11 @@
   <div class="relative">
     <button
       @click="open = !open"
-      class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+      :class="buttonClass"
       :aria-label="`Language: ${currentLanguage?.name || 'EN'}`"
     >
-      <span class="text-sm font-medium text-slate-700">{{ currentLanguage?.short || 'EN' }}</span>
-      <svg class="w-4 h-4 text-slate-600 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <span :class="labelClass">{{ currentLanguage?.short || 'EN' }}</span>
+      <svg :class="chevronClass" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
       </svg>
     </button>
@@ -47,12 +47,14 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+const props = defineProps<{ variant?: 'default' | 'blue' }>()
+
 const open = ref(false)
 const { locale } = useI18n()
 
 const languages = [
   { code: 'en', name: 'English', short: 'Eng' },
-  { code: 'ru', name: 'Русский', short: 'Рус' },
+  { code: 'ru', name: 'Русский', short: 'Rus' },
   { code: 'est', name: 'Eesti', short: 'Est' }
 ]
 
@@ -72,6 +74,32 @@ const selectLanguage = (code: string) => {
   setLanguage(code)
   open.value = false
 }
+
+const buttonClass = computed(() => {
+  const base = 'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1'
+  if (props.variant === 'blue') {
+    // Modern, subtle palette (Sky/Slate)
+    return `${base} bg-white text-sky-700 hover:bg-sky-50 active:bg-sky-100 border border-slate-200 shadow-sm focus:ring-sky-300`
+  }
+  return `${base} hover:bg-slate-100`
+})
+
+const labelClass = computed(() => {
+  const base = 'text-sm font-medium'
+  if (props.variant === 'blue') {
+    return `${base} text-sky-700`
+  }
+  return `${base} text-slate-700`
+})
+
+const chevronClass = computed(() => {
+  const base = 'w-4 h-4 transition-transform'
+  const rotate = open.value ? ' rotate-180' : ''
+  if (props.variant === 'blue') {
+    return `${base} text-sky-600${rotate}`
+  }
+  return `${base} text-slate-600${rotate}`
+})
 </script>
 
 <style scoped>

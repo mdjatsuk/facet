@@ -153,7 +153,7 @@ onMounted(() => {
             </svg>
           </button>
           <div class="flex-1 min-w-0 text-center">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ doc?.fileName || 'Preview' }}</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ doc?.fileName || $t('preview.title') }}</h1>
           </div>
           <div class="w-10"></div>
         </div>
@@ -164,7 +164,7 @@ onMounted(() => {
         <div class="max-w-7xl mx-auto px-4 py-3">
           <div class="flex items-center justify-between gap-3">
             <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium text-amber-900">Staged Document</div>
+              <div class="text-sm font-medium text-amber-900">{{ $t('preview.stagedDocument') || 'Staged Document' }}</div>
               <div class="text-xs text-amber-700 mt-0.5">
                 {{ new Date(doc.uploadedAt).toLocaleString() }} • {{ (doc.sizeBytes / 1024).toFixed(2) }} KB
               </div>
@@ -196,7 +196,7 @@ onMounted(() => {
               <svg class="w-12 h-12 mx-auto text-slate-400 mb-2 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <div class="text-slate-500">Loading preview...</div>
+              <div class="text-slate-500">{{ $t('preview.loading') || 'Loading preview...' }}</div>
             </div>
           </div>
         </div>
@@ -209,7 +209,7 @@ onMounted(() => {
                 @click="goBack"
                 class="px-4 py-3 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 active:bg-slate-300 touch-manipulation text-sm font-medium transition"
               >
-                Back
+                {{ $t('preview.back') || 'Back' }}
               </button>
               <NuxtLink
                 :to="{ path: '/sensitive-data', query: { docId: docId, staged: isStaged ? 'true' : undefined } }"
@@ -218,7 +218,7 @@ onMounted(() => {
                 <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.38-1.12-2.5-2.5-2.5S7 9.62 7 11s1.12 2.5 2.5 2.5S12 12.38 12 11z" />
                 </svg>
-                Sensitive Data
+                {{ $t('sensitiveData.title') }}
                 <span v-if="uniqueTypes.length > 0" class="bg-white text-blue-600 rounded-full px-2 py-0.5 text-xs font-bold">{{ uniqueTypes.length }}</span>
               </NuxtLink>
             </div>

@@ -1,24 +1,24 @@
 <template>
-  <nav>
-    <!-- Mobile Nav: Hamburger -->
-    <div class="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100 shadow-sm sticky top-0 z-50">
-      <button @click="open = true" aria-label="Open menu" class="p-2 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary transition">
-        <svg class="w-7 h-7 text-ink" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center shadow">
-          <img src="/favicon.svg" alt="FACET" class="h-5 w-5" />
+  <nav class="bg-white border-b border-slate-100 shadow-sm p-3">
+      <div class="flex items-center justify-between">
+        <button class="p-2 rounded-md border border-slate-200" @click="open = !open" aria-label="Menu">
+          <!-- Modern hamburger icon (3 lines, rounded ends) -->
+          <svg class="w-6 h-6 text-slate-700" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3.75 6.75h16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M3.75 12h16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M3.75 17.25h16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <!-- Inline FACET logo + title on mobile top bar -->
+        <div class="flex items-center gap-2">
+          <img src="/favicon.svg" alt="FACET" class="h-6 w-6" />
+          <span class="text-base font-semibold text-ink">FACET</span>
         </div>
-        <span class="text-xl font-semibold text-ink">FACET</span>
       </div>
-      <LanguageSwitcher />
-    </div>
-
+      <!-- Removed top-right LanguageSwitcher to avoid duplicate when menu opens -->
     <!-- Overlay -->
     <transition name="fade">
-      <div v-if="open" class="fixed inset-0 bg-black bg-opacity-50 z-40" @click="open = false"></div>
+      <div v-if="open" class="fixed inset-0 bg-black/20 z-40" @click="open = false"></div>
     </transition>
 
     <!-- Drawer -->
@@ -29,7 +29,7 @@
             <div class="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center shadow">
               <img src="/favicon.svg" alt="FACET" class="h-5 w-5" />
             </div>
-            <span class="text-lg font-semibold text-ink">Menu</span>
+            <span class="text-lg font-semibold text-ink">{{ $t('nav.menuTitle') || 'Menu' }}</span>
           </div>
           <button @click="open = false" aria-label="Close menu" class="p-2 rounded-md hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-primary transition">
             <svg class="w-6 h-6 text-ink" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -60,12 +60,12 @@
         <div class="flex-1 flex flex-col overflow-y-auto">
           <!-- Quick Actions -->
           <div class="p-4 space-y-2 border-b border-slate-100">
-            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Quick Actions</div>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{{ $t('nav.quickActions') || 'Quick Actions' }}</div>
             <NuxtLink to="/" class="nav-link" @click="open = false">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
-              Home
+              {{ $t('nav.home') || 'Home' }}
             </NuxtLink>
             <NuxtLink to="/policies/create" class="nav-link" @click="open = false">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -81,16 +81,20 @@
                 {{ $t('nav.manageUsers') }}
               </NuxtLink>
             </ClientOnly>
-            <button @click="showLanguageMenu = !showLanguageMenu" class="nav-link flex items-center justify-between w-full" :class="{ 'bg-slate-100': showLanguageMenu }">
+            <button @click="showLanguageMenu = !showLanguageMenu" class="nav-link flex items-center w-full" :class="{ 'bg-slate-100': showLanguageMenu }">
               <div class="flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10m-5 10l-5-10m14-4h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <!-- Modern globe icon -->
+                <svg class="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" />
+                  <path d="M3 12h18" stroke="currentColor" stroke-width="1.5" />
+                  <path d="M12 3c2.8 3 2.8 15 0 18" stroke="currentColor" stroke-width="1.5" />
                 </svg>
-                <span>Language</span>
+                <span>{{ $t('nav.language') || 'Language' }}</span>
+                <!-- Chevron positioned to the right of the title -->
+                <svg class="w-4 h-4 text-slate-600 transition-transform ml-1" :class="{ 'rotate-180': showLanguageMenu }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
               </div>
-              <svg class="w-4 h-4 text-slate-600 transition-transform" :class="{ 'rotate-180': showLanguageMenu }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
             </button>
             <div v-if="showLanguageMenu" class="space-y-1 border-t border-slate-100 pt-2">
               <button
@@ -109,12 +113,12 @@
           <!-- Documents Section -->
           <div class="p-4 border-b border-slate-100">
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center justify-between">
-              <span>Documents</span>
+              <span>{{ $t('documents.title') || 'Documents' }}</span>
               <span class="text-primary">{{ docs?.length || 0 }}</span>
             </div>
             <div class="space-y-1 max-h-64 overflow-y-auto">
               <div v-if="!docs || docs.length === 0" class="text-xs text-slate-400 text-center py-4">
-                No documents yet
+                {{ $t('documents.noDocuments') || 'No documents yet' }}
               </div>
               <button
                 v-for="d in docs"
@@ -139,7 +143,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    <span class="ml-1 font-semibold text-xs">{{ $t('documents.delete') }}</span>
+                    <span class="sr-only">{{ $t('documents.delete') }}</span>
                   </button>
                 </div>
               </button>
@@ -149,12 +153,12 @@
           <!-- Policies Section -->
           <div class="p-4">
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center justify-between">
-              <span>Policies</span>
+              <span>{{ $t('policies.title') || 'Policies' }}</span>
               <span class="text-primary">{{ policies?.length || 0 }}</span>
             </div>
             <div class="space-y-1 max-h-64 overflow-y-auto">
               <div v-if="!policies || policies.length === 0" class="text-xs text-slate-400 text-center py-4">
-                No policies yet
+                {{ $t('policies.noPolicy') || 'No policies yet' }}
               </div>
               <button
                 v-for="p in policies"
@@ -195,13 +199,15 @@
         
         <!-- Logout Button at Bottom -->
         <ClientOnly>
-          <div v-if="isAuthenticated" class="p-4 border-t border-slate-200 space-y-3">
-            <LanguageSwitcher />
-            <button @click="logout" class="nav-link text-red-600 w-full justify-start">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <div v-if="isAuthenticated" class="p-4 border-t border-slate-200">
+            <button 
+              @click="logout" 
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-ink hover:bg-slate-50 active:bg-slate-100 transition-colors"
+            >
+              <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              {{ $t('nav.logout') }}
+              <span class="font-medium">{{ $t('nav.logout') }}</span>
             </button>
           </div>
         </ClientOnly>
