@@ -1,0 +1,34 @@
+﻿PII/Financial Data Detection — Plain Text Demo (Synthetic, Valid Formats)
+
+Purpose:
+This .txt ************* ordinary ********* with embedded values that pass formal validation rules.
+Values are synthetic and not tied to real persons or accounts.
+
+Section 1 — Contact Cards
+Client A
+- ****: Siim Raud
+- Isikukood: 38403112423
+- Email: maike.lepik@example.ee
+- Mobile: +372 599 308 486
+- IBAN: EE863681769037528047
+
+Client B
+- ****: Kristi Koppel
+- Isikukood: 60209304008
+- Email: siim.raud@example.ee
+- Office: +372 687 34 79
+- Settlement IBAN: EE384180040470800393
+
+Section 2 — ********* with Embedded Values
+During the supplier onboarding, accounting verified the settlement account EE863681769037528047 and recorded a
+test transfer. The identity record included an Estonian personal code 60209304008, which passed the
+control-digit algorithm. If support needs to reach the contact urgently, they should call +372 599 308 486
+and follow up by email at maike.lepik@example.ee. All audit checkpoints were logged and reconciled weekly.
+
+Appendix — Quick Recap
+IBANs (ISO 13616) with correct checksum: EE863681769037528047, EE384180040470800393
+Estonian personal codes (isikukoodid) with valid control digits: 38403112423, 60209304008
+Phones: +372 599 308 486, +372 687 34 79
+Emails: maike.lepik@example.ee, siim.raud@example.ee
+
+Note: These entries are provided solely for testing redaction/detection logic.
