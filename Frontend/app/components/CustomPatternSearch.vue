@@ -170,8 +170,9 @@ async function scanCustomPattern() {
       throw new Error('No text content found in document')
     }
 
-    // Search for words/tokens containing the pattern
+    // Search for words/tokens or phrases containing the pattern
     const lowerPattern = pattern.toLowerCase()
+    const isPhrase = /\s/.test(pattern)
     
     // Split text into lines to avoid matching across paragraphs/line breaks
     const lines = textContent.split(/\r?\n/)
@@ -181,10 +182,31 @@ async function scanCustomPattern() {
     const matches: SensitiveItem[] = []
     const seen = new Set<string>()
     
-    let currentIndex = 0
     for (const line of lines) {
       const lineLower = line.toLowerCase()
+
+      if (isPhrase) {
+        // For multi-word phrases, search the line as-is
+        let startIdx = 0
+        while (true) {
+          const idx = lineLower.indexOf(lowerPattern, startIdx)
+          if (idx === -1) break
+          const found = line.substr(idx, pattern.length)
+          if (!seen.has(`${found}-${idx}`)) {
+            seen.add(`${found}-${idx}`)
+            matches.push({
+              type: `Custom: "${pattern}"`,
+              value: found,
+              indexStart: -1,
+              indexEnd: -1
+            })
+          }
+          startIdx = idx + pattern.length
+        }
+        continue
+      }
       
+      // Single-word search using word boundaries
       let match
       wordBoundaryRegex.lastIndex = 0 // Reset regex
       while ((match = wordBoundaryRegex.exec(line)) !== null) {
@@ -192,23 +214,17 @@ async function scanCustomPattern() {
         const wordLower = word.toLowerCase()
         
         if (wordLower.includes(lowerPattern)) {
-          // Avoid duplicates
           if (!seen.has(word)) {
             seen.add(word)
             matches.push({
               type: `Custom: "${pattern}"`,
               value: word,
-              // For custom patterns found by text search, use -1 to indicate these are text-based matches
-              // The backend should handle custom pattern types specially
               indexStart: -1,
               indexEnd: -1
             })
           }
         }
       }
-      
-      // Move index forward to avoid matching the same line again
-      currentIndex += line.length + 1
     }
 
     if (matches.length > 0) {
