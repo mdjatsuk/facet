@@ -51,8 +51,8 @@ function riskClass(level: RiskInfo['level']) {
       <UploadDrop @uploaded="(p) => emit('uploaded', p)" />
       <SensitiveDataBox :types="props.uniqueTypes" :doc-id="props.documentId" :custom-types="[]" />
       <CustomPatternSearch :doc-id="props.documentId" @pattern-found="(t) => emit('pattern-found', t)" />
-      <div class="mt-2 flex flex-row gap-2 items-center">
-        <button @click="emit('apply-selected')" class="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 touch-manipulation text-sm font-bold whitespace-nowrap" :disabled="!props.documentId || props.selectedCount === 0">
+      <div class="mt-2 flex flex-col gap-2 items-start">
+        <button @click="emit('apply-selected')" class="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 touch-manipulation text-sm font-bold whitespace-nowrap w-full" :disabled="!props.documentId || props.selectedCount === 0">
           {{ $t('sensitiveData.apply') }}
         </button>
         <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
