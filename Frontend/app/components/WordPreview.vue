@@ -26,77 +26,41 @@ async function loadDocument() {
   loading.value = true
   error.value = null
   
-  const maxAttempts = props.fullScreen ? 8 : 1
-  let attempt = 0
-  
-  while (attempt < maxAttempts) {
-    try {
-      const response = await fetch(props.url)
-      if (!response.ok) {
-        // On mobile fullScreen, retry a few times on 404
-        if (props.fullScreen && response.status === 404) {
-          attempt++
-          if (attempt >= maxAttempts) {
-            console.error(`[WordPreview] File not found after ${attempt} attempts: ${props.url}`)
-            error.value = 'Document file not found after retries'
-            loading.value = false
-            return
-          }
-          // Increase delay based on attempt number (1000ms, 1500ms, 2000ms, ...)
-          const delayMs = 1000 + (attempt * 500)
-          console.log(`[WordPreview] Retry attempt ${attempt}/${maxAttempts}, waiting ${delayMs}ms before retry`)
-          await new Promise(r => setTimeout(r, delayMs))
-          continue
-        }
-        throw new Error('Failed to load document')
-      }
-      
-      const blob = await response.blob()
-      const arrayBuffer = await blob.arrayBuffer()
-      
-      // Verify container still exists after async operations
-      if (!container.value) {
-        console.warn('[WordPreview] Container was removed during loading')
-        return
-      }
-      
-      // Clear previous content
-      container.value.innerHTML = ''
-      
-      // Render the document with high fidelity
-      if (!container.value) {
-        console.warn('[WordPreview] Container was removed before rendering')
-        return
-      }
-      
-      await renderAsync(arrayBuffer, container.value, undefined, {
-        className: 'docx-preview',
-        inWrapper: true,
-        ignoreWidth: false,
-        ignoreHeight: false,
-        ignoreFonts: false,
-        breakPages: true,
-        ignoreLastRenderedPageBreak: false,
-        experimental: true,
-        trimXmlDeclaration: true,
-        useBase64URL: false,
-        renderChanges: false,
-        renderHeaders: true,
-        renderFooters: true,
-        renderFootnotes: true,
-        renderEndnotes: true,
-        renderComments: false,
-      })
+  try {
+    const response = await fetch(props.url)
+    if (!response.ok) throw new Error('Failed to load document')
+    
+    const blob = await response.blob()
+    const arrayBuffer = await blob.arrayBuffer()
+    
+    // Clear previous content
+    container.value.innerHTML = ''
+    
+    // Render the document with high fidelity
+    await renderAsync(arrayBuffer, container.value, undefined, {
+      className: 'docx-preview',
+      inWrapper: true,
+      ignoreWidth: false,
+      ignoreHeight: false,
+      ignoreFonts: false,
+      breakPages: true,
+      ignoreLastRenderedPageBreak: false,
+      experimental: true,
+      trimXmlDeclaration: true,
+      useBase64URL: false,
+      renderChanges: false,
+      renderHeaders: true,
+      renderFooters: true,
+      renderFootnotes: true,
+      renderEndnotes: true,
+      renderComments: false,
+    })
 
-      loading.value = false
-      centerPreview()
-      return
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to load document'
-      loading.value = false
-      console.error('[WordPreview] Error loading document:', e)
-      return
-    }
+    loading.value = false
+    centerPreview()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to load document'
+    loading.value = false
   }
 }
 

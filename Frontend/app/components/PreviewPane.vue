@@ -32,43 +32,51 @@ async function loadObjectUrl() {
   // Clear text content as well
   textContent.value = ''
 
+  if (!tokenState.value) return
   if (!props.url || (!props.documentId && !props.url.startsWith(apiBase))) return
 
-  try {
-    // Try with token first if we have one
-    let resp: Response | null = null
-    if (tokenState.value) {
-      const headers: Record<string,string> = { Authorization: `Bearer ${tokenState.value}` }
-      resp = await fetch(props.url, { method: 'GET', headers })
-    } else {
-      // Try without token (for anonymous access)
-      resp = await fetch(props.url, { method: 'GET' })
-    }
-    
-    if (!resp.ok) {
-      console.warn('[PreviewPane] Preview fetch failed', resp.status)
+  const headers: Record<string,string> = { Authorization: `Bearer ${tokenState.value}` }
+  const maxAttempts = props.fullScreen ? 5 : 1
+  let attempt = 0
+  while (attempt < maxAttempts) {
+    try {
+      const resp = await fetch(props.url, { method: 'GET', headers })
+      if (!resp.ok) {
+        // On mobile fullScreen, retry a few times on 404
+        if (props.fullScreen && resp.status === 404) {
+          attempt++
+          if (attempt >= maxAttempts) {
+            console.warn('Preview fetch failed after retries', resp.status)
+            return
+          }
+          await new Promise(r => setTimeout(r, 400))
+          continue
+        }
+        console.warn('Preview fetch failed', resp.status)
+        return
+      }
+      const blob = await resp.blob()
+      objectUrl.value = URL.createObjectURL(blob)
+      
+      if (isText.value) {
+        try {
+          textContent.value = await blob.text()
+        } catch (e) {
+          console.error('Failed to read text content', e)
+          textContent.value = 'Failed to load text content'
+        }
+      }
+      return
+    } catch (e) {
+      console.error('Failed to fetch preview with token', e)
       return
     }
-    
-    const blob = await resp.blob()
-    objectUrl.value = URL.createObjectURL(blob)
-    
-    if (isText.value) {
-      try {
-        textContent.value = await blob.text()
-      } catch (e) {
-        console.error('Failed to read text content', e)
-        textContent.value = 'Failed to load text content'
-      }
-    }
-  } catch (e) {
-    console.error('Failed to fetch preview', e)
   }
 }
 
-watch(() => [props.url, props.documentId], () => {
+watch(() => [props.url, props.documentId, tokenState.value], () => {
   loadObjectUrl()
-})
+}, { deep: true })
 
 onMounted(() => loadObjectUrl())
 onBeforeUnmount(() => {
