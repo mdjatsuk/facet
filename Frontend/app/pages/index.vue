@@ -716,6 +716,8 @@ async function applySelected() {
   }
 }
 
+
+
 async function discardStaged() {
   if (!stagedDoc.value?.id) return
   const docId = stagedDoc.value.id
