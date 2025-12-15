@@ -289,6 +289,9 @@ onMounted(() => {
     const oldDocId = detail.oldDocId
     const detectedItems = detail.detectedItems || []
 
+    // Clear sessionStorage to prevent duplicate processing in onMounted
+    sessionStorage.removeItem('newRedactedDoc')
+
     // Remove old doc if provided and different
     if (oldDocId && oldDocId !== parsedDocId) {
       docs.value = docs.value.filter(d => d.id !== oldDocId)
@@ -334,7 +337,72 @@ onMounted(() =>
   const initialDocId = (route.query.docId as string) || undefined
   const fromSensitive = route.query.fromSensitive === 'true'
   
-  // Special handling for direct docId navigation (mobile redact flow only)
+  // FIRST: Check if there's a new redacted document in sessionStorage (from sensitive-data.vue)
+  // This must be processed BEFORE any other logic to handle duplicates properly
+  const storedNewDoc = sessionStorage.getItem('newRedactedDoc')
+  if (storedNewDoc && initialDocId && !fromSensitive) {
+    try {
+      const { newDoc, detectedItems, oldDocId } = JSON.parse(storedNewDoc)
+      sessionStorage.removeItem('newRedactedDoc')
+      
+      console.log('[onMounted] Processing new redacted doc from sessionStorage:', newDoc?.id, 'oldDoc:', oldDocId)
+      
+      const parsedDocId = newDoc?.id
+      if (!parsedDocId) {
+        throw new Error('No document ID in newRedactedDoc')
+      }
+      
+      // For anonymous users, update localStorage BEFORE doing anything else
+      if (!isAuthenticated.value) {
+        // Add new doc to anonDocs
+        saveAnonDoc(parsedDocId)
+        // Remove old doc if different
+        if (oldDocId && oldDocId !== parsedDocId) {
+          removeAnonDoc(oldDocId)
+        }
+      }
+      
+      // If an old doc id is provided, remove it to avoid duplicates
+      if (oldDocId && oldDocId !== parsedDocId) {
+        docs.value = docs.value.filter(d => d.id !== oldDocId)
+        clearDetected(oldDocId)
+      }
+      
+      // Set detected items BEFORE adding to list
+      if (detectedItems && detectedItems.length > 0) {
+        setDetected(parsedDocId, detectedItems)
+      }
+      
+      // Add or update the new doc in the list
+      const existingIdx = docs.value.findIndex(d => d.id === parsedDocId)
+      if (existingIdx === -1) {
+        docs.value.unshift(newDoc)
+      } else {
+        docs.value[existingIdx] = newDoc
+      }
+      
+      // Final guard: ensure no duplicates remain
+      docs.value = dedupeById(docs.value)
+      saveDocsCache(docs.value)
+      
+      // Select the new document
+      selectedId.value = parsedDocId
+      console.log('[onMounted] Restored redacted doc from sessionStorage, selected:', parsedDocId)
+      
+      // Clean up query parameter
+      router.replace({ path: '/', query: {} })
+      
+      // Refresh to ensure we have all documents from server (will now have updated anonDocs)
+      refresh(parsedDocId)
+      return
+    } catch (e) {
+      console.error('Failed to parse newRedactedDoc from sessionStorage', e)
+      sessionStorage.removeItem('newRedactedDoc')
+      // Fall through to normal flow
+    }
+  }
+  
+  // Special handling for direct docId navigation (mobile redact flow without sessionStorage)
   // Only use query docId if we're clearly coming from mobile (no fromSensitive flag)
   if (initialDocId && !fromSensitive && !docs.value.length) {
     console.log('[onMounted] Direct docId in query (mobile):', initialDocId)
@@ -498,50 +566,6 @@ watch(() => route.query.docId, async (newDocId) => {
       router.replace({ path: '/', query: {} })
       return
     }
-    
-    // Check if there's a new redacted document in sessionStorage (from preview.vue or sensitive-data.vue)
-    const storedNewDoc = sessionStorage.getItem('newRedactedDoc')
-    if (storedNewDoc) {
-      try {
-        const { newDoc, detectedItems, oldDocId } = JSON.parse(storedNewDoc)
-        sessionStorage.removeItem('newRedactedDoc')
-        
-        const parsedDocId = newDoc?.id
-        if (!parsedDocId) {
-          throw new Error('No document ID in newRedactedDoc')
-        }
-        
-        // If an old doc id is provided, remove it to avoid duplicates
-        if (oldDocId) {
-          docs.value = docs.value.filter(d => d.id !== oldDocId)
-        }
-        // Add or update the new doc in the list
-        const existingIdx = docs.value.findIndex(d => d.id === parsedDocId)
-        if (existingIdx === -1) {
-          docs.value.unshift(newDoc)
-        } else {
-          docs.value[existingIdx] = newDoc
-        }
-        // Final guard: ensure no duplicates remain
-        docs.value = dedupeById(docs.value)
-        
-        // Set detected items
-        if (detectedItems && detectedItems.length > 0) {
-          setDetected(parsedDocId, detectedItems)
-        }
-        
-        // Select the new document
-        selectedId.value = parsedDocId
-        console.log('Restored redacted doc from sessionStorage:', parsedDocId)
-      } catch (e) {
-        console.error('Failed to parse newRedactedDoc from sessionStorage', e)
-        sessionStorage.removeItem('newRedactedDoc')
-        refresh(newDocId as string)
-      }
-    } else {
-      // Normal refresh if no sessionStorage data
-      refresh(newDocId as string)
-    }
   }
 })
 
@@ -642,6 +666,15 @@ async function applySelected() {
       setDetected(newDocId, detectedItems)
     }
     
+    // Remove the old document from docs list if id changed
+    if (newDocId !== targetId) {
+      docs.value = docs.value.filter(d => d.id !== targetId)
+      // Also clear from anonymous docs
+      if (!isAuthenticated.value) {
+        removeAnonDoc(targetId)
+      }
+    }
+    
     // Add or update the document in the list
     const existingIdx = docs.value.findIndex(d => d.id === newDocId)
     if (existingIdx === -1) {
@@ -650,10 +683,8 @@ async function applySelected() {
       docs.value[existingIdx] = newDoc
     }
     
-    // Remove the old document from docs list only if id changed
-    if (newDocId !== targetId) {
-      docs.value = docs.value.filter(d => d.id !== targetId)
-    }
+    // Ensure no duplicates
+    docs.value = dedupeById(docs.value)
     saveDocsCache(docs.value)
     
     // If this was a staged document, clear it immediately
@@ -667,10 +698,9 @@ async function applySelected() {
       localStorage.removeItem(selectedIdKey.value)
     }
     
-    // For anonymous users, save the new document ID to localStorage
+    // For anonymous users, ensure the new document is saved
     if (!isAuthenticated.value && newDocId) {
       saveAnonDoc(newDocId)
-      removeAnonDoc(targetId)
     }
     
     // Select the new document
