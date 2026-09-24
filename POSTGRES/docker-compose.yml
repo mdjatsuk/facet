@@ -7,7 +7,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-facet_local_only}
       - POSTGRES_DB=facet-db
       - POSTGRES_USER=postgres
     networks:
@@ -21,7 +21,7 @@ services:
     - pgadmin-data:/var/lib/pgadmin
     environment:
     - PGADMIN_DEFAULT_EMAIL=admin@admin.com
-    - PGADMIN_DEFAULT_PASSWORD=admin
+    - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-facet_pgadmin_local_only}
     networks:
     - pg_net
 networks:

@@ -133,11 +133,8 @@ namespace FacetApi.Data.Repos
 
             newUser.Password = hashed;
             newUser.Salt = salt;
-            // Ensure new users get the default role
-            if (string.IsNullOrWhiteSpace(newUser.Role))
-            {
-                newUser.Role = "User";
-            }
+            // Never accept a role supplied by an unauthenticated registration request.
+            newUser.Role = "User";
 
             _context.UserList!.Add(newUser);
             await _context.SaveChangesAsync();

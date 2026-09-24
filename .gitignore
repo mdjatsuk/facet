@@ -1,0 +1,34 @@
+# .NET build output and local tooling
+**/bin/
+**/obj/
+**/TestResults/
+.vs/
+.idea/
+.vscode/*.log
+
+# Local databases and runtime document uploads
+*.db
+*.db-shm
+*.db-wal
+Backend/FacetApi/storage/**
+!Backend/FacetApi/storage/.gitkeep
+
+# Frontend dependencies and generated output
+**/node_modules/
+Frontend/.nuxt/
+Frontend/.output/
+Frontend/.data/
+Frontend/.nitro/
+Frontend/dist/
+
+# Local settings and secrets
+.env
+.env.*
+!.env.example
+**/appsettings.Local.json
+*.user
+*.suo
+
+# OS/editor files
+.DS_Store
+Thumbs.db
