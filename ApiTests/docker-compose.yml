@@ -3,7 +3,7 @@ services:
     image: ${DOCKER_PUBLIC_REGISTRY}/postgres:18-alpine
     container_name: api_db
     environment:
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${API_TEST_POSTGRES_PASSWORD:-facet_test_disposable_password}
       - PGPORT=5433
     ports:
       - "5433:5433"
@@ -15,9 +15,9 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:5000
       - ASPNETCORE_ENVIRONMENT=Development
-      - Jwt__Key=qwertyuiopasdfghjklzxcvbnm123456
-      - Jwt__Issuer=Online JWT Builder
-      - ConnectionStrings__Default=Host=db;Port=5433;Database=facet-db;Username=postgres;Password=postgres
+      - Jwt__Key=${API_TEST_JWT_KEY:-facet-api-tests-only-signing-key-change-me}
+      - Jwt__Issuer=Facet.ApiTests
+      - ConnectionStrings__Default=Host=db;Port=5433;Database=facet-db;Username=postgres;Password=${API_TEST_POSTGRES_PASSWORD:-facet_test_disposable_password}
     depends_on:
       - postgres
     networks:

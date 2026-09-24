@@ -52,11 +52,6 @@ namespace FacetApi.Migrations
                         onDelete: ReferentialAction.SetNull);
                 });
 
-            migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "IsBanned", "Password", "Role", "Salt", "Username" },
-                values: new object[] { 1, false, "admin1", "Admin", null, "admin" });
-
             migrationBuilder.CreateIndex(
                 name: "IX_Documents_OwnerId",
                 table: "Documents",

@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 
@@ -71,6 +73,33 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FacetDbContext>();
     await db.Database.MigrateAsync();
+
+    var adminUsername = builder.Configuration["BootstrapAdmin:Username"];
+    var adminPassword = builder.Configuration["BootstrapAdmin:Password"];
+    if (!string.IsNullOrWhiteSpace(adminUsername) && !string.IsNullOrWhiteSpace(adminPassword))
+    {
+        var users = scope.ServiceProvider.GetRequiredService<FacetDbContext>().UserList!;
+        if (!await users.AnyAsync(user => user.Username == adminUsername))
+        {
+            var saltBytes = RandomNumberGenerator.GetBytes(16);
+            var salt = Convert.ToBase64String(saltBytes);
+            var passwordHash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: adminPassword,
+                salt: saltBytes,
+                prf: KeyDerivationPrf.HMACSHA256,
+                iterationCount: 100_000,
+                numBytesRequested: 32));
+
+            users.Add(new FacetApi.Models.User
+            {
+                Username = adminUsername,
+                Password = passwordHash,
+                Salt = salt,
+                Role = "Admin"
+            });
+            await db.SaveChangesAsync();
+        }
+    }
 }
 
 app.Run();

@@ -6,8 +6,6 @@ using PdfSharpCore.Pdf;
 using PdfSharpCore.Drawing;
 using PdfSharpCore;
 using PdfSharpCore.Drawing.Layout;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Runtime.Versioning;
 using DocumentFormat.OpenXml.Packaging;
 using System.Text;

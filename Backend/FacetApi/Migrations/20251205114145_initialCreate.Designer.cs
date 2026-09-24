@@ -92,15 +92,6 @@ namespace FacetApi.Migrations
 
                     b.ToTable("Users", (string)null);
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            IsBanned = false,
-                            Password = "admin1",
-                            Role = "Admin",
-                            Username = "admin"
-                        });
                 });
 
             modelBuilder.Entity("FacetApi.Models.Document", b =>
